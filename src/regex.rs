@@ -1,36 +1,56 @@
 pub enum Regex {
+    SingleCharacter { value: u8 },
+    Union { options: Vec<Regex> },
+    Concat { parts: Vec<Regex> },
+    Star { repeated_pattern: Box<Regex> },
 }
 
 impl Regex {
     pub fn single_char(value: char) -> Regex {
-        todo!()
+        Regex::SingleCharacter { value: value.try_into().unwrap() }  // TODO unwrap
     }
 
     pub fn union(options: impl Iterator<Item=Regex>) -> Regex {
-        todo!()
+        Regex::Union { options }
     }
 
     pub fn concat(parts: impl Iterator<Item=Regex>) -> Regex {
-        todo!()
+        Regex::Concat { parts }
     }
 
     pub fn star_from(repeated_pattern: Regex) -> Regex {
-        todo!()
+        Regex::Star { repeated_pattern: Box::new(repeated_pattern) }
     }
 
     pub fn white_space() -> Regex {
-        todo!()
+        let white_space_characters = vec![' ', '\t', '\n', '\r', '\x0B', '\x0C'];
+        Regex::union(
+            white_space_characters
+                .iter()
+                .map(Regex::single_char)
+        )
     }
 
     pub fn constant_string(string: &str) -> Regex {
-        todo!()
+        Regex::concat(
+            string
+                .chars()
+                .map(Regex::single_char)
+        )
     }
 
     pub fn character_range(start: char, end: char) -> Regex {
-        todo!()
+        Regex::union(
+            (start..=end)
+                .map(Regex::single_char))
     }
 
     pub fn optional(option: Regex) -> Regex {
-        todo!()
+        Regex::union([
+            option,
+            Regex::union(Vec::new()),
+        ].into_iter())
     }
 }
+
+// TODO tests
