@@ -1,14 +1,36 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
+
+
+pub mod regex;
+
+pub struct LexemeDescriptor<T> {
+    pub lexeme_type: T,
+    pub pattern: regex::Regex,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub struct Lexeme<T> {
+    pub lexeme_type: T,
+    pub string: String,
+}
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+#[derive(Serialize, Deserialize)]
+pub struct LexicalAnalyzer<T> {}
+
+impl<T> LexicalAnalyzer<T> {
+    pub fn analyze_string(self, source: &str) -> impl Iterator<Item=Lexeme<T>> {
+        todo!()
+    }
+}
+
+impl<T> LexicalAnalyzer<T>
+where
+    T: Serialize + Deserialize,
+{
+    pub fn save_to_json_file(self, filename: &str) {
+        todo!()
+    }
+    pub fn load_from_json_file(filepath: &str) -> LexicalAnalyzer<T> {
+        todo!()
     }
 }
