@@ -25,33 +25,33 @@ static LEXEME_DESCRIPTORS: &[LexemeDescriptor<LexemeType>] = &[
     },
     LexemeDescriptor {
         lexeme_type: LexemeType::Identifier,
-        pattern: Regex::concat([
-            Regex::union([
+        pattern: Regex::concat(vec![
+            Regex::union(vec![
                 Regex::character_range('a', 'z'),
                 Regex::character_range('A', 'Z'),
                 Regex::single_char('_'),
-            ].into_iter()),
+            ]),
             Regex::star_from(
-                Regex::union([
+                Regex::union(vec![
                     Regex::character_range('a', 'z'),
                     Regex::character_range('A', 'Z'),
                     Regex::character_range('0', '9'),
                     Regex::single_char('_'),
-                ].into_iter()),
+                ]),
             ),
-        ].into_iter()),
+        ]),
     },
     LexemeDescriptor {
         lexeme_type: LexemeType::Integer,
-        pattern: Regex::concat([
+        pattern: Regex::concat(vec![
             Regex::optional(
-                Regex::union([
+                Regex::union(vec![
                     Regex::single_char('+'),
                     Regex::single_char('-'),
-                ].into_iter()),
+                ]),
             ),
             Regex::plus_from(Regex::digit())
-        ].into_iter()),
+        ]),
     },
     LexemeDescriptor {
         lexeme_type: LexemeType::WhiteSpace,

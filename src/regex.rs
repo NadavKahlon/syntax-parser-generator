@@ -10,11 +10,11 @@ impl Regex {
         Regex::SingleCharacter { value: value.try_into().unwrap() }  // TODO unwrap
     }
 
-    pub fn union(options: impl Iterator<Item=Regex>) -> Regex {
+    pub fn union(options: Vec<Regex>) -> Regex {
         Regex::Union { options }
     }
 
-    pub fn concat(parts: impl Iterator<Item=Regex>) -> Regex {
+    pub fn concat(parts: Vec<Regex>) -> Regex {
         Regex::Concat { parts }
     }
 
@@ -26,8 +26,9 @@ impl Regex {
         let white_space_characters = vec![' ', '\t', '\n', '\r', '\x0B', '\x0C'];
         Regex::union(
             white_space_characters
-                .iter()
+                .into_iter()
                 .map(Regex::single_char)
+                .collect()
         )
     }
 
@@ -36,20 +37,23 @@ impl Regex {
             string
                 .chars()
                 .map(Regex::single_char)
+                .collect()
         )
     }
 
     pub fn character_range(start: char, end: char) -> Regex {
         Regex::union(
             (start..=end)
-                .map(Regex::single_char))
+                .map(Regex::single_char)
+                .collect()
+        )
     }
 
     pub fn optional(option: Regex) -> Regex {
-        Regex::union([
+        Regex::union(vec![
             option,
             Regex::union(Vec::new()),
-        ].into_iter())
+        ])
     }
 }
 
