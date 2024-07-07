@@ -84,3 +84,47 @@ impl From<NfaBuilder> for Nfa {
         Nfa { states: nfa_builder.states.into_boxed_slice() }
     }
 }
+
+impl Nfa {
+    fn epsilon_closure(&self, states: &HashSet<NfaStateHandle>) -> HashSet<NfaStateHandle> {
+        let mut states_to_process: Vec<NfaStateHandle> = states.clone().into_iter().collect();
+        let mut closure: HashSet<NfaStateHandle> = HashSet::new();
+
+        loop {
+            match states_to_process.pop() {
+                Some(state) => {
+                    if closure.insert(state) {
+                        states_to_process.extend(&self.states[state.id as usize].epsilon_transitions)
+                    }
+                }
+                None => break
+            }
+        }
+
+        closure
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nfa_closure() {
+        let mut nfa_builder = NfaBuilder::new(1);
+        let states = vec![nfa_builder.new_state(); 3];
+
+        nfa_builder.link(states[0], states[1], None);
+        nfa_builder.link(states[0], states[1], Some(AutomatonSymbol { id: 0 }));
+        nfa_builder.link(states[2], states[0], Some(AutomatonSymbol { id: 0 }));
+        nfa_builder.link(states[2], states[0], None);
+
+        let nfa: Nfa = nfa_builder.into();
+
+        assert_eq!(
+            nfa.epsilon_closure(&[states[0]].into()),
+            [states[0], states[1]].into()
+        )
+    }
+}
