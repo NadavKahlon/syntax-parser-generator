@@ -2,11 +2,7 @@
 // IMPROVE: we may wanna replace all these `as usize`
 
 use std::collections::HashSet;
-
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct AutomatonSymbol {
-    id: u16,
-}
+use super::InputSymbol;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct NfaStateHandle {
@@ -57,10 +53,10 @@ impl NfaBuilder {
 
     fn link(
         &mut self, src: NfaStateHandle, dst: NfaStateHandle,
-        transition_label: Option<AutomatonSymbol>,
+        transition_label: Option<InputSymbol>,
     ) {
         match transition_label {
-            Some(AutomatonSymbol { id: symbol_id }) => {
+            Some(InputSymbol { id: symbol_id }) => {
                 self.states[src.id as usize].symbol_transitions[symbol_id as usize].insert(dst);
             }
             None => {
@@ -116,8 +112,8 @@ mod tests {
         let states = vec![nfa_builder.new_state(); 3];
 
         nfa_builder.link(states[0], states[1], None);
-        nfa_builder.link(states[0], states[1], Some(AutomatonSymbol { id: 0 }));
-        nfa_builder.link(states[2], states[0], Some(AutomatonSymbol { id: 0 }));
+        nfa_builder.link(states[0], states[1], Some(InputSymbol { id: 0 }));
+        nfa_builder.link(states[2], states[0], Some(InputSymbol { id: 0 }));
         nfa_builder.link(states[2], states[0], None);
 
         let nfa: Nfa = nfa_builder.into();
