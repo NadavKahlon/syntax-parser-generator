@@ -99,6 +99,15 @@ impl Nfa {
 
         closure
     }
+
+    fn move_by_symbol(&self, states: &HashSet<NfaStateHandle>, symbol: InputSymbol) -> HashSet<NfaStateHandle> {
+        states
+            .iter()
+            .map(|state| { &self.states[state.id as usize].symbol_transitions[symbol.id as usize] })
+            .flat_map(HashSet::iter)
+            .map(NfaStateHandle::clone)
+            .collect()
+    }
 }
 
 
@@ -106,21 +115,41 @@ impl Nfa {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_nfa_closure() {
-        let mut nfa_builder = NfaBuilder::new(1);
-        let states = vec![nfa_builder.new_state(); 3];
+    fn build_test_data() -> (Nfa, Vec<NfaStateHandle>, Vec<InputSymbol>) {
+        let num_symbols = 1;
+        let num_states = 3;
+
+        let symbols: Vec<InputSymbol> =
+            (0..num_symbols)
+                .map(|id| InputSymbol { id })
+                .collect();
+        let mut nfa_builder = NfaBuilder::new(symbols.len() as u16);
+        let states = vec![nfa_builder.new_state();  num_states];
 
         nfa_builder.link(states[0], states[1], None);
-        nfa_builder.link(states[0], states[1], Some(InputSymbol { id: 0 }));
-        nfa_builder.link(states[2], states[0], Some(InputSymbol { id: 0 }));
+        nfa_builder.link(states[0], states[1], Some(symbols[0]));
+        nfa_builder.link(states[0], states[2], Some(symbols[0]));
+        nfa_builder.link(states[2], states[0], Some(symbols[0]));
         nfa_builder.link(states[2], states[0], None);
 
-        let nfa: Nfa = nfa_builder.into();
+        (nfa_builder.into(), states, symbols)
+    }
 
+    #[test]
+    fn test_nfa_closure() {
+        let (nfa, states, _) = build_test_data();
         assert_eq!(
             nfa.epsilon_closure(&[states[0]].into()),
             [states[0], states[1]].into()
+        )
+    }
+
+    #[test]
+    fn test_nfa_move_by_symbol() {
+        let (nfa, states, symbols) = build_test_data();
+        assert_eq!(
+            nfa.move_by_symbol(&[states[0]].into(), symbols[0]),
+            [states[1], states[2]].into()
         )
     }
 }
