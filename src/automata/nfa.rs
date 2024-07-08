@@ -123,7 +123,7 @@ mod tests {
                 .map(|id| InputSymbol { id })
                 .collect();
         let mut nfa_builder = NfaBuilder::new(symbols.len() as u16);
-        let states = vec![nfa_builder.new_state(); num_states];
+        let states: Vec<NfaStateHandle> = (0..num_states).map(|_| nfa_builder.new_state()).collect();
 
         nfa_builder.link(states[0], states[1], None);
         nfa_builder.link(states[0], states[1], Some(symbols[0]));
