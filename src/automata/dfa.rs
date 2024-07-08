@@ -5,20 +5,13 @@ struct DfaStateHandle {
     id: u16,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-struct DfaStateLabel {
-    id: u16,
-}
-
 struct DfaBuilderState {
-    label: Option<DfaStateLabel>,
     transitions: Box<[Option<DfaStateHandle>]>,  // Symbols have constant size
 }
 
 impl DfaBuilderState {
     fn new(num_symbols: u16) -> DfaBuilderState {
         DfaBuilderState {
-            label: None,
             transitions: vec![None; num_symbols as usize].into_boxed_slice(),
         }
     }
@@ -29,10 +22,7 @@ impl DfaBuilderState {
             new_transitions.push(transition.clone()?);
         };
 
-        Some(DfaState {
-            label: self.label,
-            transitions: new_transitions.into_boxed_slice(),
-        })
+        Some(DfaState { transitions: new_transitions.into_boxed_slice() })
     }
 }
 
@@ -60,10 +50,6 @@ impl DfaBuilder {
         self.states[src.id as usize].transitions[symbol.id as usize] = Some(dst);
     }
 
-    fn label(&mut self, state: DfaStateHandle, label: Option<DfaStateLabel>) {
-        self.states[state.id as usize].label = label
-    }
-
     fn build(self, initial_state: DfaStateHandle) -> Option<Dfa> {  // May fail if some transition is None
         let mut new_states: Vec<DfaState> = Vec::new();
 
@@ -79,7 +65,6 @@ impl DfaBuilder {
 }
 
 struct DfaState {
-    label: Option<DfaStateLabel>,
     transitions: Box<[DfaStateHandle]>,  // Symbols have constant size
 }
 
@@ -97,10 +82,10 @@ impl Dfa {
         return self.states[state.id as usize].transitions[symbol.id as usize];
     }
 
-    fn scan(&self, symbol_string: impl Iterator<Item=InputSymbol>) -> Option<DfaStateLabel> {
+    fn scan(&self, symbol_string: impl Iterator<Item=InputSymbol>) -> DfaStateHandle {
         let final_state = symbol_string
             .fold(self.initial_state, |state, symbol| self.step(state, symbol));
-        return self.states[final_state.id as usize].label;
+        return final_state;
     }
 }
 
@@ -127,7 +112,7 @@ mod tests {
         assert!(dfa_builder.build(states[0]).is_none())
     }
 
-    fn build_test_data() -> (Dfa, Vec<DfaStateHandle>, Vec<InputSymbol>, DfaStateLabel) {
+    fn build_test_data() -> (Dfa, Vec<DfaStateHandle>, Vec<InputSymbol>) {
         let num_symbols = 2;
         let num_states = 2;
 
@@ -137,28 +122,26 @@ mod tests {
                 .collect();
         let mut dfa_builder = DfaBuilder::new(symbols.len() as u16);
         let states: Vec<DfaStateHandle> = (0..num_states).map(|_| dfa_builder.new_state()).collect();
-        let label = DfaStateLabel { id: 0 };
 
         dfa_builder.link(states[0], states[0], symbols[0]);
         dfa_builder.link(states[0], states[1], symbols[1]);
         dfa_builder.link(states[1], states[0], symbols[1]);
         dfa_builder.link(states[1], states[1], symbols[0]);
-        dfa_builder.label(states[1], Some(label));
 
-        (dfa_builder.build(states[0]).unwrap(), states, symbols, label)
+        (dfa_builder.build(states[0]).unwrap(), states, symbols)
     }
 
     #[test]
     fn test_scan_1() {
-        let (dfa, states, symbols, label) = build_test_data();
+        let (dfa, states, symbols) = build_test_data();
         let input_string = [symbols[1], symbols[0], symbols[0], symbols[1]];
-        assert_eq!(dfa.scan(input_string.into_iter()), None)
+        assert_eq!(dfa.scan(input_string.into_iter()), states[0])
     }
 
     #[test]
     fn test_scan_2() {
-        let (dfa, states, symbols, label) = build_test_data();
+        let (dfa, states, symbols) = build_test_data();
         let input_string = [symbols[1], symbols[0], symbols[0], symbols[1], symbols[1]];
-        assert_eq!(dfa.scan(input_string.into_iter()), Some(label))
+        assert_eq!(dfa.scan(input_string.into_iter()), states[1])
     }
 }

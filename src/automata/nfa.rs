@@ -6,13 +6,7 @@ struct NfaStateHandle {
     id: u16,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct NfaStateLabel {
-    id: u16,
-}
-
 struct NfaState {
-    label: Option<NfaStateLabel>,
     epsilon_transitions: HashSet<NfaStateHandle>,
     symbol_transitions: Box<[HashSet<NfaStateHandle>]>,  // Symbols have constant size
 }
@@ -20,7 +14,6 @@ struct NfaState {
 impl NfaState {
     fn new(num_symbols: u16) -> NfaState {
         NfaState {
-            label: None,
             epsilon_transitions: HashSet::new(),
             symbol_transitions: vec![HashSet::new(); num_symbols as usize].into_boxed_slice(),
         }
@@ -60,10 +53,6 @@ impl NfaBuilder {
                 self.states[src.id as usize].epsilon_transitions.insert(dst);
             }
         }
-    }
-
-    fn label(&mut self, state: NfaStateHandle, label: Option<NfaStateLabel>) {
-        self.states[state.id as usize].label = label
     }
 
     fn build(self, initial_state: NfaStateHandle) -> Nfa {
