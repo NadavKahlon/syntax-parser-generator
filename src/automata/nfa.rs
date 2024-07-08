@@ -1,5 +1,6 @@
 // IMPROVE: use trait bounds on u8, u16, u32, u64, usize, to replace all occurrences of u16 here
 // IMPROVE: we may wanna replace all these `as usize`
+// IMPROVE: add validation at various methods
 
 use std::collections::HashSet;
 use super::InputSymbol;
@@ -68,17 +69,19 @@ impl NfaBuilder {
     fn label(&mut self, state: NfaStateHandle, label: Option<NfaStateLabel>) {
         self.states[state.id as usize].label = label
     }
+
+    fn build(self, initial_state: NfaStateHandle) -> Nfa {
+        Nfa {
+            states: self.states.into_boxed_slice(),
+            initial_state,
+        }
+    }
 }
 
 // More optimized to have a static nature - an automaton on which only analyses are performed
 struct Nfa {
     states: Box<[NfaState]>,
-}
-
-impl From<NfaBuilder> for Nfa {
-    fn from(nfa_builder: NfaBuilder) -> Self {
-        Nfa { states: nfa_builder.states.into_boxed_slice() }
-    }
+    initial_state: NfaStateHandle,
 }
 
 impl Nfa {
@@ -124,7 +127,7 @@ mod tests {
                 .map(|id| InputSymbol { id })
                 .collect();
         let mut nfa_builder = NfaBuilder::new(symbols.len() as u16);
-        let states = vec![nfa_builder.new_state();  num_states];
+        let states = vec![nfa_builder.new_state(); num_states];
 
         nfa_builder.link(states[0], states[1], None);
         nfa_builder.link(states[0], states[1], Some(symbols[0]));
@@ -132,7 +135,7 @@ mod tests {
         nfa_builder.link(states[2], states[0], Some(symbols[0]));
         nfa_builder.link(states[2], states[0], None);
 
-        (nfa_builder.into(), states, symbols)
+        (nfa_builder.build(states[0]), states, symbols)
     }
 
     #[test]
