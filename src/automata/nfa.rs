@@ -1,7 +1,3 @@
-// IMPROVE: use trait bounds on u8, u16, u32, u64, usize, to replace all occurrences of u16 here
-// IMPROVE: we may wanna replace all these `as usize`
-// IMPROVE: add validation at various methods
-
 use std::collections::HashSet;
 use super::InputSymbol;
 
