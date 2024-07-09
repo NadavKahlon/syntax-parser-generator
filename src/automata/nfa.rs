@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use super::InputSymbol;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-struct NfaStateHandle {
-    id: u16,
+pub struct NfaStateHandle {
+    pub id: u16,
 }
 
 struct NfaState {
@@ -57,6 +57,7 @@ impl NfaBuilder {
 
     fn build(self, initial_state: NfaStateHandle) -> Nfa {
         Nfa {
+            num_symbols: self.num_symbols,
             states: self.states.into_boxed_slice(),
             initial_state,
         }
@@ -64,13 +65,14 @@ impl NfaBuilder {
 }
 
 // More optimized to have a static nature - an automaton on which only analyses are performed
-struct Nfa {
+pub struct Nfa {
+    pub num_symbols: u16,
     states: Box<[NfaState]>,
-    initial_state: NfaStateHandle,
+    pub initial_state: NfaStateHandle,
 }
 
 impl Nfa {
-    fn epsilon_closure(&self, states: &HashSet<NfaStateHandle>) -> HashSet<NfaStateHandle> {
+    pub fn epsilon_closure(&self, states: &HashSet<NfaStateHandle>) -> HashSet<NfaStateHandle> {
         let mut states_to_process: Vec<NfaStateHandle> = states.clone().into_iter().collect();
         let mut closure: HashSet<NfaStateHandle> = HashSet::new();
 
@@ -88,7 +90,7 @@ impl Nfa {
         closure
     }
 
-    fn move_by_symbol(&self, states: &HashSet<NfaStateHandle>, symbol: InputSymbol) -> HashSet<NfaStateHandle> {
+    pub fn move_by_symbol(&self, states: &HashSet<NfaStateHandle>, symbol: InputSymbol) -> HashSet<NfaStateHandle> {
         states
             .iter()
             .map(|state| { &self.states[state.id as usize].symbol_transitions[symbol.id as usize] })

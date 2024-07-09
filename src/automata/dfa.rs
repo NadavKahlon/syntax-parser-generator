@@ -1,7 +1,7 @@
 use super::InputSymbol;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-struct DfaStateHandle {
+pub struct DfaStateHandle {
     id: u16,
 }
 
@@ -26,31 +26,31 @@ impl DfaBuilderState {
     }
 }
 
-struct DfaBuilder {
+pub struct DfaBuilder {
     num_symbols: u16,
     states: Vec<DfaBuilderState>,
 }
 
 impl DfaBuilder {
-    fn new(num_symbols: u16) -> DfaBuilder {
+    pub fn new(num_symbols: u16) -> DfaBuilder {
         DfaBuilder {
             num_symbols,
             states: Vec::new(),
         }
     }
 
-    fn new_state(&mut self) -> DfaStateHandle {
+    pub fn new_state(&mut self) -> DfaStateHandle {
         self.states.push(DfaBuilderState::new(self.num_symbols));
         DfaStateHandle {
             id: (self.states.len() - 1) as u16  // TODO possible type confusion vulnerability
         }
     }
 
-    fn link(&mut self, src: DfaStateHandle, dst: DfaStateHandle, symbol: InputSymbol) {
+    pub fn link(&mut self, src: DfaStateHandle, dst: DfaStateHandle, symbol: InputSymbol) {
         self.states[src.id as usize].transitions[symbol.id as usize] = Some(dst);
     }
 
-    fn build(self, initial_state: DfaStateHandle) -> Option<Dfa> {  // May fail if some transition is None
+    pub fn build(self, initial_state: DfaStateHandle) -> Option<Dfa> {  // May fail if some transition is None
         let mut new_states: Vec<DfaState> = Vec::new();
 
         for state in self.states {
@@ -68,7 +68,7 @@ struct DfaState {
     transitions: Box<[DfaStateHandle]>,  // Symbols have constant size
 }
 
-struct Dfa {
+pub struct Dfa {
     states: Box<[DfaState]>,
     initial_state: DfaStateHandle,
 }

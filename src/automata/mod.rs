@@ -5,6 +5,7 @@
 
 mod nfa;
 mod dfa;
+mod nfa_to_dfa;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct InputSymbol {
