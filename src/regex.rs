@@ -132,13 +132,93 @@ mod tests {
     }
 
     fn string_to_stream<'a>(data: &'a str) -> impl Iterator<Item=InputSymbol> + 'a {
-        data.chars().map(|c| InputSymbol{ id: c as u8 as u16 })
+        data.chars().map(|c| InputSymbol { id: c as u8 as u16 })
     }
 
     #[test]
     fn test_single_char() {
         let pattern = Regex::single_char('a');
         let (dfa, accepting_states) = create_dfa_for_regex(pattern);
-        dfa.scan(string_to_stream(""));
+
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("a"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream(""))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("aa"))));
+    }
+
+    #[test]
+    fn test_union() {
+        let pattern = Regex::union(vec![
+            Regex::single_char('a'),
+            Regex::single_char('b'),
+            Regex::single_char('c'),
+        ]);
+        let (dfa, accepting_states) = create_dfa_for_regex(pattern);
+
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("a"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("b"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("c"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream(""))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("aa"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("d"))));
+    }
+
+    #[test]
+    fn test_concat() {
+        let pattern = Regex::concat(vec![
+            Regex::single_char('a'),
+            Regex::single_char('b'),
+            Regex::single_char('c'),
+        ]);
+        let (dfa, accepting_states) = create_dfa_for_regex(pattern);
+
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("abc"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream(""))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("a"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("bc"))));
+    }
+
+    //noinspection ALL
+    #[test]
+    fn test_star() {
+        let pattern = Regex::star_from(
+            Regex::single_char('a'),
+        );
+        let (dfa, accepting_states) = create_dfa_for_regex(pattern);
+
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream(""))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("a"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("aa"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("aaaaaaa"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("b"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("ab"))));
+    }
+
+    #[test]
+    fn test_complex() {
+        let pattern = Regex::concat(vec![
+            Regex::union(vec![
+                Regex::character_range('a', 'z'),
+                Regex::character_range('A', 'Z'),
+                Regex::single_char('_'),
+            ]),
+            Regex::star_from(
+                Regex::union(vec![
+                    Regex::character_range('a', 'z'),
+                    Regex::character_range('A', 'Z'),
+                    Regex::character_range('0', '9'),
+                    Regex::single_char('_'),
+                ]),
+            ),
+        ]);
+        let (dfa, accepting_states) = create_dfa_for_regex(pattern);
+
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("MyThing"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("our_thing_12"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("i"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("a1jh2b45"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream(""))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("mine()"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("12"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("1ours"))));
     }
 }
