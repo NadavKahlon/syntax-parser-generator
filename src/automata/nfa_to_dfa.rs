@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use bit_set::BitSet;
 use super::nfa::{Nfa, NfaStateHandle};
 use super::dfa::{Dfa, DfaBuilder, DfaStateHandle};
 use super::InputSymbol;
@@ -81,10 +82,11 @@ impl Hash for NfaStatesSetHashableWrapper {
     where
         H: Hasher,
     {
-        let NfaStatesSetHashableWrapper(nfa_states) = self;
-        for nfa_state in nfa_states.into_iter() {
-            nfa_state.hash(state);
-        }
+        let bitset: BitSet = self.0
+            .iter()
+            .map(|state| state.id as usize)
+            .collect();
+        bitset.hash(state);
     }
 }
 
