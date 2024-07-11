@@ -7,7 +7,7 @@ use super::InputSymbol;
 
 // TODO consider relocating this
 impl Nfa {
-    pub fn compile_to_dfa(&self) -> Dfa {
+    pub fn compile_to_dfa(&self) -> (Dfa, HashMap<DfaStateHandle, HashSet<NfaStateHandle>>) {
         NfaToDfaCompiler::new(self).compile()
     }
 }
@@ -29,7 +29,7 @@ impl<'a> NfaToDfaCompiler<'a> {
         }
     }
 
-    fn compile(mut self) -> Dfa {
+    fn compile(mut self) -> (Dfa, HashMap<DfaStateHandle, HashSet<NfaStateHandle>>) {
         let initial_nfa_state_set: HashSet<NfaStateHandle> =
             self.nfa.epsilon_closure(&[self.nfa.initial_state].into());
         let initial_dfa_state = self.install_new_state(initial_nfa_state_set);
@@ -42,10 +42,13 @@ impl<'a> NfaToDfaCompiler<'a> {
                 None => break,
             }
         }
+        let nfa_states_map = self.build_nfa_states_map();
 
-        self.dfa_builder
+        let dfa = self.dfa_builder
             .build(initial_dfa_state)
-            .expect("NfaToDfaCompiler should handle all symbol transitions")
+            .expect("NfaToDfaCompiler should handle all symbol transitions");
+
+        (dfa, nfa_states_map)
     }
 
     fn install_new_state(&mut self, nfa_states_set: HashSet<NfaStateHandle>) -> DfaStateHandle {
@@ -70,6 +73,17 @@ impl<'a> NfaToDfaCompiler<'a> {
                 self.dfa_builder.link(dfa_state, new_dfa_state, symbol);
             }
         }
+    }
+
+    fn build_nfa_states_map(&self) -> HashMap<DfaStateHandle, HashSet<NfaStateHandle>> {
+        let mut result: HashMap<DfaStateHandle, HashSet<NfaStateHandle>> = HashMap::new();
+        for (
+            NfaStatesSetHashableWrapper(nfa_states),
+            dfa_state
+        ) in &self.dfa_states_map {
+            result.insert(dfa_state.clone(), nfa_states.clone());
+        }
+        result
     }
 }
 

@@ -82,7 +82,7 @@ impl Dfa {
         return self.states[state.id as usize].transitions[symbol.id as usize];
     }
 
-    fn scan(&self, symbol_string: impl Iterator<Item=InputSymbol>) -> DfaStateHandle {
+    pub fn scan(&self, symbol_string: impl Iterator<Item=InputSymbol>) -> DfaStateHandle {
         let final_state = symbol_string
             .fold(self.initial_state, |state, symbol| self.step(state, symbol));
         return final_state;

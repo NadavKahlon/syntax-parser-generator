@@ -21,27 +21,27 @@ impl NfaState {
 }
 
 // More optimized to have a dynamic nature - an automaton being built live
-struct NfaBuilder {
+pub struct NfaBuilder {
     num_symbols: u16,
     states: Vec<NfaState>,
 }
 
 impl NfaBuilder {
-    fn new(num_symbols: u16) -> NfaBuilder {
+    pub fn new(num_symbols: u16) -> NfaBuilder {
         NfaBuilder {
             num_symbols,
             states: Vec::new(),
         }
     }
 
-    fn new_state(&mut self) -> NfaStateHandle {
+    pub fn new_state(&mut self) -> NfaStateHandle {
         self.states.push(NfaState::new(self.num_symbols));
         NfaStateHandle {
             id: (self.states.len() - 1) as u16  // TODO possible type confusion vulnerability
         }
     }
 
-    fn link(
+    pub fn link(
         &mut self, src: NfaStateHandle, dst: NfaStateHandle,
         transition_label: Option<InputSymbol>,
     ) {
@@ -55,7 +55,7 @@ impl NfaBuilder {
         }
     }
 
-    fn build(self, initial_state: NfaStateHandle) -> Nfa {
+    pub fn build(self, initial_state: NfaStateHandle) -> Nfa {
         Nfa {
             num_symbols: self.num_symbols,
             states: self.states.into_boxed_slice(),

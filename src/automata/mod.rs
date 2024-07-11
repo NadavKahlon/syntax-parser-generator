@@ -3,11 +3,11 @@
 // IMPROVE: add validation at various methods
 // IMPROVE: change the internal representation of DfaState and NfaState to maximize space locality
 
-mod nfa;
-mod dfa;
+pub mod nfa;
+pub mod dfa;
 mod nfa_to_dfa;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct InputSymbol {
-    id: u16,
+pub struct InputSymbol {
+    pub id: u16,
 }
