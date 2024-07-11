@@ -69,9 +69,14 @@ impl<'a> NfaToDfaCompiler<'a> {
             // TODO prettify the borrowing juggling we do here because of the wrapper
             let target_nfa_states_set_wrapper = NfaStatesSetHashableWrapper(target_nfa_states_set);
             if !self.dfa_states_map.contains_key(&target_nfa_states_set_wrapper) {
-                let new_dfa_state = self.install_new_state(target_nfa_states_set_wrapper.0);
-                self.dfa_builder.link(dfa_state, new_dfa_state, symbol);
+                self.install_new_state(target_nfa_states_set_wrapper.clone().0);
             }
+
+            let target_dfa_state =
+                self.dfa_states_map.get(&target_nfa_states_set_wrapper)
+                    .expect("DFA state associated with NFA-states-set should just have been added")
+                    .clone();
+            self.dfa_builder.link(dfa_state, target_dfa_state, symbol);
         }
     }
 
@@ -88,7 +93,7 @@ impl<'a> NfaToDfaCompiler<'a> {
 }
 
 // Required for efficient lookup of the DFA state associated with a given set of NFA states
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 struct NfaStatesSetHashableWrapper(HashSet<NfaStateHandle>);
 
 impl Hash for NfaStatesSetHashableWrapper {
