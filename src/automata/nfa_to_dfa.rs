@@ -23,7 +23,7 @@ impl<'a> NfaToDfaCompiler<'a> {
     fn new(nfa: &'a Nfa) -> NfaToDfaCompiler {
         NfaToDfaCompiler {
             nfa,
-            dfa_builder: DfaBuilder::new(nfa.num_symbols),
+            dfa_builder: DfaBuilder::new(nfa.num_symbols as usize),
             dfa_states_map: HashMap::new(),
             unprocessed_new_states: vec![],
         }

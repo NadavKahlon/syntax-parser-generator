@@ -2,7 +2,7 @@ use super::InputSymbol;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct DfaStateHandle {
-    id: u16,
+    pub(super) id: u16,
 }
 
 struct DfaBuilderState {
@@ -10,9 +10,9 @@ struct DfaBuilderState {
 }
 
 impl DfaBuilderState {
-    fn new(num_symbols: u16) -> DfaBuilderState {
+    fn new(num_symbols: usize) -> DfaBuilderState {
         DfaBuilderState {
-            transitions: vec![None; num_symbols as usize].into_boxed_slice(),
+            transitions: vec![None; num_symbols].into_boxed_slice(),
         }
     }
 
@@ -27,14 +27,14 @@ impl DfaBuilderState {
 }
 
 pub struct DfaBuilder {
-    num_symbols: u16,
+    num_symbols: usize,
     states: Vec<DfaBuilderState>,
 }
 
 impl DfaBuilder {
-    pub fn new(num_symbols: u16) -> DfaBuilder {
+    pub fn new(num_symbols: usize) -> DfaBuilder {
         DfaBuilder {
-            num_symbols,
+            num_symbols,  // Possible type confusion
             states: Vec::new(),
         }
     }
@@ -64,13 +64,13 @@ impl DfaBuilder {
     }
 }
 
-struct DfaState {
+pub(super) struct DfaState {
     transitions: Box<[DfaStateHandle]>,  // Symbols have constant size
 }
 
 pub struct Dfa {
-    states: Box<[DfaState]>,
-    initial_state: DfaStateHandle,
+    pub(super) states: Box<[DfaState]>,
+    pub(super) initial_state: DfaStateHandle,
 }
 
 impl Dfa {
@@ -87,6 +87,10 @@ impl Dfa {
             .fold(self.initial_state, |state, symbol| self.step(state, symbol));
         return final_state;
     }
+
+    pub fn num_symbols(&self) -> usize {
+        self.states[self.initial_state.id as usize].transitions.len()
+    }
 }
 
 #[cfg(test)]
@@ -102,7 +106,7 @@ mod tests {
             (0..num_symbols)
                 .map(|id| InputSymbol { id })
                 .collect();
-        let mut dfa_builder = DfaBuilder::new(symbols.len() as u16);
+        let mut dfa_builder = DfaBuilder::new(symbols.len());
         let states: Vec<DfaStateHandle> = (0..num_states).map(|_| dfa_builder.new_state()).collect();
 
         dfa_builder.link(states[0], states[0], symbols[1]);
@@ -120,7 +124,7 @@ mod tests {
             (0..num_symbols)
                 .map(|id| InputSymbol { id })
                 .collect();
-        let mut dfa_builder = DfaBuilder::new(symbols.len() as u16);
+        let mut dfa_builder = DfaBuilder::new(symbols.len());
         let states: Vec<DfaStateHandle> = (0..num_states).map(|_| dfa_builder.new_state()).collect();
 
         dfa_builder.link(states[0], states[0], symbols[0]);
