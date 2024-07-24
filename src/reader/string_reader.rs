@@ -13,7 +13,7 @@ impl StringReader {
 }
 
 impl Reader<InputSymbol> for StringReader {
-    fn read_unit(&mut self, address: usize) -> InputSymbol {
+    fn read_unit(&self, address: usize) -> InputSymbol {
         InputSymbol { id: self.data[address] as u16 }
     }
 }
@@ -24,13 +24,13 @@ mod tests {
 
     #[test]
     fn test_read_unit() {
-        let mut reader = StringReader::new("Tell me why".to_string());
+        let reader = StringReader::new("Tell me why".to_string());
         assert_eq!(reader.read_unit(3), InputSymbol { id: 'l' as u16})
     }
 
     #[test]
     fn test_read_sequence() {
-        let mut reader = StringReader::new("Tell me why".to_string());
+        let reader = StringReader::new("Tell me why".to_string());
         assert_eq!(
             reader.read_sequence(5,7).collect::<Vec<InputSymbol>>(),
             vec![
