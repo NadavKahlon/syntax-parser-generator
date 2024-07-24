@@ -2,3 +2,4 @@
 
 pub mod regex;
 mod automata;
+mod reader;
