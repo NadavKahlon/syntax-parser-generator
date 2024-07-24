@@ -92,7 +92,7 @@ where
 
         // Optimize the DFA (minimize its number of states) and locate dead state
         let optimized_labeled_dfa = labeled_dfa.minimize();
-        let dead_state = labeled_dfa.dfa.locate_dead_state().expect(
+        let dead_state = optimized_labeled_dfa.dfa.locate_dead_state().expect(
             "A minimized DFA for regex-based lexical analyzer is expected to have a dead state"
         );
 
