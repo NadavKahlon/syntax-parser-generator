@@ -66,7 +66,7 @@ impl DfaBuilder {
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct DfaState {
-    transitions: Box<[DfaStateHandle]>,  // Symbols have constant size
+    pub(super) transitions: Box<[DfaStateHandle]>,  // Symbols have constant size
 }
 
 #[derive(Debug, PartialEq, Eq)]
