@@ -95,9 +95,16 @@ impl Regex {
                 (start, end)
             }
             Regex::Star { repeated_pattern } => {
-                let (start, end) =
+                let start = nfa_builder.new_state();
+                let end = nfa_builder.new_state();
+                let (repeated_pattern_start, repeated_pattern_end) =
                     repeated_pattern.build_into_nfa(nfa_builder);
-                nfa_builder.link(end, start, None);
+
+                nfa_builder.link(start, repeated_pattern_start, None);
+                nfa_builder.link(start, end, None);
+                nfa_builder.link(repeated_pattern_end, end, None);
+                nfa_builder.link(repeated_pattern_end, repeated_pattern_start, None);
+
                 (start, end)
             }
         }
