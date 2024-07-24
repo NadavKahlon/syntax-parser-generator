@@ -1,10 +1,14 @@
-use std::collections::HashMap;
-use crate::automata::dfa::DfaStateHandle;
-use crate::automata::InputSymbol;
-use crate::automata::labeled_dfa::{DfaLabel, LabeledDfa};
-use crate::automata::nfa::NfaBuilder;
+use crate::lexical_analyzer::lexeme_iterator::LexemeIterator;
+use crate::automata::labeled_dfa::DfaLabel;
 use crate::reader::Reader;
+use crate::automata::InputSymbol;
+use crate::automata::labeled_dfa::LabeledDfa;
+use crate::automata::dfa::DfaStateHandle;
 use crate::regex::Regex;
+use crate::automata::nfa::NfaBuilder;
+use std::collections::HashMap;
+
+mod lexeme_iterator;
 
 struct LexemeDescriptor<T> {
     pattern: Regex,
@@ -14,38 +18,6 @@ struct LexemeDescriptor<T> {
 pub struct Lexeme<T> {
     lexeme_type: T,
     contents: String,
-}
-
-pub struct LexemeIterator<'a, T, U>
-where
-    U: Reader<u8>,
-    T: Clone,
-{
-    lexical_analyzer: &'a LexicalAnalyzer<T>,
-    reader: &'a mut U,
-}
-
-impl<'a, T, U> LexemeIterator<'a, T, U>
-where
-    U: Reader<u8>,
-    T: Clone,
-{
-    fn new(lexical_analyzer: &'a LexicalAnalyzer<T>, reader: &'a mut U) -> Self
-    {
-        Self { lexical_analyzer, reader }
-    }
-}
-
-impl<'a, T, U> Iterator for LexemeIterator<'a, T, U>
-where
-    U: Reader<u8>,
-    T: Clone,
-{
-    type Item = Lexeme<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.lexical_analyzer.collect_next_lexeme(self.reader)
-    }
 }
 
 // TODO doc: maximum of 256 symbols
@@ -115,7 +87,7 @@ where
     }
 
     pub fn parse<'a>(&'a self, reader: &'a mut impl Reader<u8>)
-        -> impl Iterator<Item=Lexeme<T>> + 'a
+                     -> impl Iterator<Item=Lexeme<T>> + 'a
     {
         LexemeIterator::new(self, reader)
     }

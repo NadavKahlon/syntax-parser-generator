@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn test_no_dead_state() {
-        let (dfa, states, _) = build_test_data();
+        let (dfa, _, _) = build_test_data();
         assert_eq!(dfa.locate_dead_state(), None)
     }
 }
