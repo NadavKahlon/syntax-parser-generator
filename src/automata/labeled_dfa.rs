@@ -16,7 +16,7 @@ impl LabeledDfa {
         Self { dfa, labels }
     }
 
-    pub(super) fn label(&mut self, state: DfaStateHandle, label: DfaLabel) {
+    pub fn label(&mut self, state: DfaStateHandle, label: DfaLabel) {
         self.labels[state.id as usize] = label;
     }
 
