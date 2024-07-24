@@ -1,42 +1,69 @@
-use crate::automata::InputSymbol;
-use crate::reader::Reader;
+use crate::reader::address_based::{AddressBasedReader, AddressSpace};
 
-pub struct StringReader {
+pub struct ByteAddressSpace {
     data: Box<[u8]>,
 }
 
-// TODO doc: only supports ASCII
-impl StringReader {
-    fn new(data: String) -> Self {
-        StringReader { data: data.into_bytes().into_boxed_slice() }
+impl ByteAddressSpace {
+    fn from_string(data: String) -> Self {
+        ByteAddressSpace { data: data.into_bytes().into_boxed_slice() }
     }
 }
 
-impl Reader<InputSymbol> for StringReader {
-    fn read_unit(&self, address: usize) -> InputSymbol {
-        InputSymbol { id: self.data[address] as u16 }
+impl AddressSpace<u8> for ByteAddressSpace {
+    fn read_at(&self, address: usize) -> u8 {
+        self.data[address]
     }
 }
+
+pub type ByteReader = AddressBasedReader<u8, ByteAddressSpace>;
+
+impl ByteReader {
+    pub fn from_string(data: String) -> ByteReader {
+        let address_space = ByteAddressSpace::from_string(data);
+        AddressBasedReader::raw_new(address_space)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
+    use crate::reader::Reader;
     use super::*;
 
     #[test]
-    fn test_read_unit() {
-        let reader = StringReader::new("Tell me why".to_string());
-        assert_eq!(reader.read_unit(3), InputSymbol { id: 'l' as u16})
+    fn test_reading() {
+        let mut reader = ByteReader::from_string("Hi, this is data".to_string());
+        assert_eq!(reader.read_next(), 'H' as u8);
+        assert_eq!(reader.read_next(), 'i' as u8);
+        assert_eq!(reader.read_next(), ',' as u8);
     }
 
     #[test]
-    fn test_read_sequence() {
-        let reader = StringReader::new("Tell me why".to_string());
+    fn test_sequence_extraction() {
+        let mut reader = ByteReader::from_string("Hi, this is data".to_string());
+        reader.read_next();
+        reader.read_next();
+        reader.read_next();
+        reader.read_next();
+        reader.set_head();
+        reader.read_next();
+        reader.read_next();
+        reader.read_next();
+        reader.read_next();
+        reader.set_tail();
         assert_eq!(
-            reader.read_sequence(5,7).collect::<Vec<InputSymbol>>(),
-            vec![
-                InputSymbol { id: 'm' as u16},
-                InputSymbol { id: 'e' as u16},
-            ],
-        )
+            String::from_utf8(reader.get_sequence().collect()).unwrap(),
+            "this".to_string(),
+        );
+    }
+
+    #[test]
+    fn test_reset_to_tail() {
+        let mut reader = ByteReader::from_string("Hi, this is data".to_string());
+        reader.set_tail();
+        reader.read_next();
+        reader.reset_to_tail();
+        assert_eq!(reader.read_next(), 'H' as u8);
     }
 }
