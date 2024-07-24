@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::automata::dfa::DfaStateHandle;
 use crate::automata::labeled_dfa::{DfaLabel, LabeledDfa};
 use crate::automata::nfa::NfaBuilder;
 use crate::reader::Reader;
@@ -21,6 +22,7 @@ where
 {
     labeled_dfa: LabeledDfa,
     lexeme_types_for_dfa_labels: HashMap<DfaLabel, T>,
+    dead_state: DfaStateHandle,
 }
 
 // Earlier lexeme descriptors are prioritized
@@ -70,10 +72,13 @@ where
             }
         }
 
-        // Optimize the DFA (minimize its number of states)
+        // Optimize the DFA (minimize its number of states) and locate dead state
         let labeled_dfa = unoptimized_labeled_dfa.minimize();
+        let dead_state = labeled_dfa.dfa.locate_dead_state().expect(
+            "A minimized DFA for regex-based lexical analyzer is expected to have a dead state"
+        );
 
-        LexicalAnalyzer { labeled_dfa, lexeme_types_for_dfa_labels }
+        LexicalAnalyzer { labeled_dfa, lexeme_types_for_dfa_labels, dead_state }
     }
 }
 

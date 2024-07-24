@@ -6,7 +6,7 @@ pub struct DfaLabel(pub u8);
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct LabeledDfa {
-    pub(super) dfa: Dfa,
+    pub dfa: Dfa,
     pub labels: Box<[DfaLabel]>,
 }
 
