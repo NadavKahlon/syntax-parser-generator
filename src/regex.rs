@@ -1,6 +1,7 @@
 use crate::automata::{InputSymbol, nfa};
 use crate::automata::nfa::NfaStateHandle;
 
+#[derive(Clone)]
 pub enum Regex {
     SingleCharacter { value: u8 },
     Union { options: Vec<Regex> },
@@ -23,6 +24,14 @@ impl Regex {
 
     pub fn star_from(repeated_pattern: Regex) -> Regex {
         Regex::Star { repeated_pattern: Box::new(repeated_pattern) }
+    }
+
+    pub fn plus_from(repeated_pattern: Regex) -> Regex {
+        let star_pattern = Regex::star_from(repeated_pattern.clone());
+        Regex::concat(vec![
+            repeated_pattern,
+            star_pattern
+        ])
     }
 
     pub fn white_space() -> Regex {
@@ -193,6 +202,21 @@ mod tests {
         let (dfa, accepting_states) = create_dfa_for_regex(pattern);
 
         assert!(accepting_states.contains(&dfa.scan(string_to_stream(""))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("a"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("aa"))));
+        assert!(accepting_states.contains(&dfa.scan(string_to_stream("aaaaaaa"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("b"))));
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream("ab"))));
+    }
+
+    #[test]
+    fn test_plus() {
+        let pattern = Regex::plus_from(
+            Regex::single_char('a'),
+        );
+        let (dfa, accepting_states) = create_dfa_for_regex(pattern);
+
+        assert!(!accepting_states.contains(&dfa.scan(string_to_stream(""))));
         assert!(accepting_states.contains(&dfa.scan(string_to_stream("a"))));
         assert!(accepting_states.contains(&dfa.scan(string_to_stream("aa"))));
         assert!(accepting_states.contains(&dfa.scan(string_to_stream("aaaaaaa"))));

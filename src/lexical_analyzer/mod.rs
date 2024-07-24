@@ -10,11 +10,15 @@ use std::collections::HashMap;
 
 mod lexeme_iterator;
 
+#[cfg(test)]
+mod tests;
+
 struct LexemeDescriptor<T> {
     pattern: Regex,
     lexeme_type: T,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Lexeme<T> {
     lexeme_type: T,
     contents: String,
@@ -39,7 +43,7 @@ where
     pub fn new(lexeme_descriptors: Vec<LexemeDescriptor<T>>) -> LexicalAnalyzer<T> {
         let mut nfa_builder = NfaBuilder::new(u8::MAX as u16);
         let global_start_state = nfa_builder.new_state();
-        let mut lexeme_types_for_dfa_labels = HashMap::new();
+        let mut lexeme_types_map = HashMap::new();
 
         let mut nfa_state_to_label_map = HashMap::new();
         for (pattern_index, LexemeDescriptor { pattern, lexeme_type })
@@ -48,7 +52,7 @@ where
             // Create DFA label for pattern
             // We add 1 to the pattern index, to reserve label 0 for "no pattern associated"
             let label = DfaLabel((pattern_index + 1) as u8); // Possible type confusion
-            lexeme_types_for_dfa_labels.insert(label, lexeme_type.clone());
+            lexeme_types_map.insert(label, lexeme_type.clone());
 
             // Build pattern into the nfa
             let (pattern_start_state, pattern_end_state) =
@@ -63,7 +67,7 @@ where
             = nfa.compile_to_dfa();
 
         // Label DFA states according to the first pattern associated with them
-        let mut unoptimized_labeled_dfa = LabeledDfa::new(dfa);
+        let mut labeled_dfa = LabeledDfa::new(dfa);
         for (&dfa_state, associated_nfa_states)
         in dfa_to_nfa_states_map.iter() {
             let optional_label = associated_nfa_states
@@ -73,21 +77,30 @@ where
                 .filter(|x| x.0 != 0)
                 .min(); // We pick the minimum label to prioritize earlier lexeme descriptions
             if let Some(&label) = optional_label {
-                unoptimized_labeled_dfa.label(dfa_state, label)
+                labeled_dfa.label(dfa_state, label)
             }
         }
 
+        // Make initial state is unlabeled, so we won't get stuck on epsilon when input is exhausted
+        let initial_state_label = labeled_dfa.get_label(labeled_dfa.dfa.initial_state);
+        if lexeme_types_map.contains_key(&initial_state_label) {
+            panic!(
+                "Tried to create a lexical analyzer where some lexeme type is associated with a \
+                regex accepting the empty string, which will make it get stuck on input exhaustion"
+            )
+        }
+
         // Optimize the DFA (minimize its number of states) and locate dead state
-        let labeled_dfa = unoptimized_labeled_dfa.minimize();
+        let optimized_labeled_dfa = labeled_dfa.minimize();
         let dead_state = labeled_dfa.dfa.locate_dead_state().expect(
             "A minimized DFA for regex-based lexical analyzer is expected to have a dead state"
         );
 
-        LexicalAnalyzer { labeled_dfa, lexeme_types_map: lexeme_types_for_dfa_labels, dead_state }
+        LexicalAnalyzer { labeled_dfa: optimized_labeled_dfa, lexeme_types_map, dead_state }
     }
 
-    pub fn parse<'a>(&'a self, reader: &'a mut impl Reader<u8>)
-                     -> impl Iterator<Item=Lexeme<T>> + 'a
+    pub fn analyze<'a>(&'a self, reader: &'a mut impl Reader<u8>)
+                       -> impl Iterator<Item=Lexeme<T>> + 'a
     {
         LexemeIterator::new(self, reader)
     }
@@ -118,5 +131,3 @@ where
         Some(lexeme)
     }
 }
-
-// TODO add tests

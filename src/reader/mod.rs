@@ -1,5 +1,5 @@
 mod address_based;
-mod string_reader;
+pub mod string_reader;
 
 pub trait Reader<T> {
     fn read_next(&mut self) -> Option<T>;
