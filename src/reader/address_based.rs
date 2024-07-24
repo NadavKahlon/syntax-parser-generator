@@ -3,6 +3,7 @@ use crate::reader::Reader;
 
 pub trait AddressSpace<T> {
     fn read_at(&self, address: usize) -> T;
+    fn size(&self) -> usize;
 }
 
 pub struct AddressBasedReader<T, U>
@@ -35,10 +36,14 @@ impl<T, U> Reader<T> for AddressBasedReader<T, U>
 where
     U: AddressSpace<T>,
 {
-    fn read_next(&mut self) -> T {
-        let result = self.address_space.read_at(self.cursor_address);
-        self.cursor_address += 1;
-        result
+    fn read_next(&mut self) -> Option<T> {
+        if self.cursor_address < self.address_space.size() {
+            let result = self.address_space.read_at(self.cursor_address);
+            self.cursor_address += 1;
+            result
+        } else {
+            None
+        }
     }
 
     fn set_head(&mut self) {

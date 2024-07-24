@@ -2,7 +2,7 @@ mod address_based;
 mod string_reader;
 
 pub trait Reader<T> {
-    fn read_next(&mut self) -> T;
+    fn read_next(&mut self) -> Option<T>;
     fn set_head(&mut self);
     fn set_tail(&mut self);
     fn reset_to_tail(&mut self);  // The next item read is the one after tail

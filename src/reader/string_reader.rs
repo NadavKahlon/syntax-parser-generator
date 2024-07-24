@@ -14,6 +14,10 @@ impl AddressSpace<u8> for ByteAddressSpace {
     fn read_at(&self, address: usize) -> u8 {
         self.data[address]
     }
+
+    fn size(&self) -> usize {
+        self.data.len()
+    }
 }
 
 pub type ByteReader = AddressBasedReader<u8, ByteAddressSpace>;
