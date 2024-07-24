@@ -2,8 +2,7 @@ use std::marker::PhantomData;
 use crate::reader::Reader;
 
 pub trait AddressSpace<T> {
-    fn read_at(&self, address: usize) -> T;
-    fn size(&self) -> usize;
+    fn read_at(&self, address: usize) -> Option<T>;
 }
 
 pub struct AddressBasedReader<T, U>
@@ -37,13 +36,9 @@ where
     U: AddressSpace<T>,
 {
     fn read_next(&mut self) -> Option<T> {
-        if self.cursor_address < self.address_space.size() {
-            let result = self.address_space.read_at(self.cursor_address);
-            self.cursor_address += 1;
-            result
-        } else {
-            None
-        }
+        let result = self.address_space.read_at(self.cursor_address)?;
+        self.cursor_address += 1;
+        Some(result)
     }
 
     fn set_head(&mut self) {
@@ -54,12 +49,15 @@ where
         self.tail_address = self.cursor_address;
     }
 
-    fn reset_to_tail(&mut self) {
+    fn move_cursor_to_tail(&mut self) {
         self.cursor_address = self.tail_address;
     }
 
     fn get_sequence(&self) -> impl Iterator<Item=T> {
         (self.head_address..self.tail_address)
             .map(|address| self.address_space.read_at(address))
+            .map(|optional_item| optional_item.expect(
+                "Sequence of Reader items between head & tail should exist"
+            ))
     }
 }

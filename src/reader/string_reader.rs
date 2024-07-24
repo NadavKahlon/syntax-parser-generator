@@ -11,12 +11,8 @@ impl ByteAddressSpace {
 }
 
 impl AddressSpace<u8> for ByteAddressSpace {
-    fn read_at(&self, address: usize) -> u8 {
-        self.data[address]
-    }
-
-    fn size(&self) -> usize {
-        self.data.len()
+    fn read_at(&self, address: usize) -> Option<u8> {
+        self.data.get(address).copied()
     }
 }
 
@@ -38,9 +34,9 @@ mod tests {
     #[test]
     fn test_reading() {
         let mut reader = ByteReader::from_string("Hi, this is data".to_string());
-        assert_eq!(reader.read_next(), 'H' as u8);
-        assert_eq!(reader.read_next(), 'i' as u8);
-        assert_eq!(reader.read_next(), ',' as u8);
+        assert_eq!(reader.read_next(), Some('H' as u8));
+        assert_eq!(reader.read_next(), Some('i' as u8));
+        assert_eq!(reader.read_next(), Some(',' as u8));
     }
 
     #[test]
@@ -67,7 +63,7 @@ mod tests {
         let mut reader = ByteReader::from_string("Hi, this is data".to_string());
         reader.set_tail();
         reader.read_next();
-        reader.reset_to_tail();
-        assert_eq!(reader.read_next(), 'H' as u8);
+        reader.restart_from_tail();
+        assert_eq!(reader.read_next(), Some('H' as u8));
     }
 }

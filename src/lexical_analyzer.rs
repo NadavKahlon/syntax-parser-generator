@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use crate::automata::dfa::DfaStateHandle;
+use crate::automata::InputSymbol;
 use crate::automata::labeled_dfa::{DfaLabel, LabeledDfa};
 use crate::automata::nfa::NfaBuilder;
 use crate::reader::Reader;
@@ -10,9 +11,41 @@ struct LexemeDescriptor<T> {
     lexeme_type: T,
 }
 
-struct Lexeme<T> {
+pub struct Lexeme<T> {
     lexeme_type: T,
     contents: String,
+}
+
+pub struct LexemeIterator<'a, T, U>
+where
+    U: Reader<u8>,
+    T: Clone,
+{
+    lexical_analyzer: &'a LexicalAnalyzer<T>,
+    reader: &'a mut U,
+}
+
+impl<'a, T, U> LexemeIterator<'a, T, U>
+where
+    U: Reader<u8>,
+    T: Clone,
+{
+    fn new(lexical_analyzer: &'a LexicalAnalyzer<T>, reader: &'a mut U) -> Self
+    {
+        Self { lexical_analyzer, reader }
+    }
+}
+
+impl<'a, T, U> Iterator for LexemeIterator<'a, T, U>
+where
+    U: Reader<u8>,
+    T: Clone,
+{
+    type Item = Lexeme<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.lexical_analyzer.collect_next_lexeme(self.reader)
+    }
 }
 
 // TODO doc: maximum of 256 symbols
@@ -21,7 +54,7 @@ where
     T: Clone,
 {
     labeled_dfa: LabeledDfa,
-    lexeme_types_for_dfa_labels: HashMap<DfaLabel, T>,
+    lexeme_types_map: HashMap<DfaLabel, T>,
     dead_state: DfaStateHandle,
 }
 
@@ -78,7 +111,39 @@ where
             "A minimized DFA for regex-based lexical analyzer is expected to have a dead state"
         );
 
-        LexicalAnalyzer { labeled_dfa, lexeme_types_for_dfa_labels, dead_state }
+        LexicalAnalyzer { labeled_dfa, lexeme_types_map: lexeme_types_for_dfa_labels, dead_state }
+    }
+
+    pub fn parse<'a>(&'a self, reader: &'a mut impl Reader<u8>)
+        -> impl Iterator<Item=Lexeme<T>> + 'a
+    {
+        LexemeIterator::new(self, reader)
+    }
+
+    fn identify_next_lexeme(&self, reader: &mut impl Reader<u8>) -> Option<T> {
+        // TODO error recovery
+        let mut recent_lexeme_type: Option<T> = None;
+        let mut current_state = self.labeled_dfa.dfa.initial_state;
+        while current_state != self.dead_state {
+            let current_state_label = self.labeled_dfa.get_label(current_state);
+            if let Some(lexeme_type) = self.lexeme_types_map.get(&current_state_label) {
+                recent_lexeme_type = Some(lexeme_type.clone());
+                reader.set_tail();
+            }
+            let next_input_symbol = InputSymbol { id: reader.read_next()? as u16 };
+            current_state = self.labeled_dfa.dfa.step(current_state, next_input_symbol)
+        }
+        recent_lexeme_type
+    }
+
+    fn collect_next_lexeme(&self, reader: &mut impl Reader<u8>) -> Option<Lexeme<T>> {
+        let lexeme_type = self.identify_next_lexeme(reader)?;
+        let contents = String::from_utf8(reader.get_sequence().collect()).expect(
+            "Tokens from lexically-analyzed Reader<u8> are expected to be UTF-8 encoded"
+        );
+        let lexeme = Lexeme { lexeme_type, contents };
+        reader.restart_from_tail();
+        Some(lexeme)
     }
 }
 

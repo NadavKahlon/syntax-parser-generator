@@ -72,7 +72,7 @@ pub(super) struct DfaState {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Dfa {
     pub(super) states: Box<[DfaState]>,
-    pub(super) initial_state: DfaStateHandle,
+    pub initial_state: DfaStateHandle,
 }
 
 impl Dfa {
