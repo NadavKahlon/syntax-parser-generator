@@ -1,4 +1,5 @@
 use crate::automata::dfa::{Dfa, DfaStateHandle};
+use crate::automata::dfa_minimize::LabeledDfaMinimizer;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DfaLabel(pub u8);
@@ -22,5 +23,9 @@ impl LabeledDfa {
 
     pub fn get_label(&self, state: DfaStateHandle) -> DfaLabel {
         self.labels[state.id as usize]
+    }
+
+    pub fn minimize(&self) -> Self {
+        LabeledDfaMinimizer::new(self).calculate_minimized_dfa()
     }
 }

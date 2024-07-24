@@ -4,23 +4,17 @@ use crate::automata::dfa::{DfaBuilder, DfaStateHandle};
 use crate::automata::InputSymbol;
 use crate::automata::labeled_dfa::{DfaLabel, LabeledDfa};
 
-impl LabeledDfa {
-    fn minimize(&self) -> Self {
-        LabeledDfaMinimizer::new(self).calculate_minimized_dfa()
-    }
-}
-
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 struct EquivalenceIndex(usize);
 
-struct LabeledDfaMinimizer<'a> {
+pub struct LabeledDfaMinimizer<'a> {
     labeled_dfa: &'a LabeledDfa,
     equivalence_map: Vec<EquivalenceIndex>,
     equivalence_sets: Vec<Vec<DfaStateHandle>>,
 }
 
 impl<'a> LabeledDfaMinimizer<'a> {
-    fn new(labeled_dfa: &'a LabeledDfa) -> Self {
+    pub fn new(labeled_dfa: &'a LabeledDfa) -> Self {
         let mut result = Self {
             labeled_dfa,
             equivalence_map: vec![EquivalenceIndex(0); labeled_dfa.dfa.states.len()],
@@ -30,7 +24,7 @@ impl<'a> LabeledDfaMinimizer<'a> {
         result
     }
 
-    fn calculate_minimized_dfa(mut self) -> LabeledDfa {
+    pub fn calculate_minimized_dfa(mut self) -> LabeledDfa {
         while self
             .equivalence_sets
             .clone()
