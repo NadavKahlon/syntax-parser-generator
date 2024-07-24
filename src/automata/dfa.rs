@@ -64,10 +64,12 @@ impl DfaBuilder {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub(super) struct DfaState {
     transitions: Box<[DfaStateHandle]>,  // Symbols have constant size
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Dfa {
     pub(super) states: Box<[DfaState]>,
     pub(super) initial_state: DfaStateHandle,
@@ -78,7 +80,7 @@ impl Dfa {
         Dfa { states, initial_state }
     }
 
-    fn step(&self, state: DfaStateHandle, symbol: InputSymbol) -> DfaStateHandle {
+    pub fn step(&self, state: DfaStateHandle, symbol: InputSymbol) -> DfaStateHandle {
         return self.states[state.id as usize].transitions[symbol.id as usize];
     }
 

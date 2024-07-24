@@ -6,6 +6,8 @@
 pub mod nfa;
 pub mod dfa;
 mod nfa_to_dfa;
+mod labeled_dfa;
+mod dfa_minimize;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct InputSymbol {
