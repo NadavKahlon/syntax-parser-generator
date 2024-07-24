@@ -93,6 +93,18 @@ impl Dfa {
     pub fn num_symbols(&self) -> usize {
         self.states[self.initial_state.id as usize].transitions.len()
     }
+
+    pub fn locate_dead_state(&self) -> Option<DfaStateHandle> {
+        for (state_id, state) in self.states.iter().enumerate() {
+            let state_handle = DfaStateHandle { id: state_id as u16 }; // Optional type confusion
+            if state.transitions.iter().all(|&target_state_handle| {
+                target_state_handle == state_handle
+            }) {
+                return Some(state_handle);
+            }
+        }
+        return None;
+    }
 }
 
 #[cfg(test)]
@@ -149,5 +161,34 @@ mod tests {
         let (dfa, states, symbols) = build_test_data();
         let input_string = [symbols[1], symbols[0], symbols[0], symbols[1], symbols[1]];
         assert_eq!(dfa.scan(input_string.into_iter()), states[1])
+    }
+
+    #[test]
+    fn test_existing_dead_state_state() {
+        let num_symbols = 2;
+        let num_states = 3;
+
+        let symbols: Vec<InputSymbol> =
+            (0..num_symbols)
+                .map(|id| InputSymbol { id })
+                .collect();
+        let mut dfa_builder = DfaBuilder::new(symbols.len());
+        let states: Vec<DfaStateHandle> = (0..num_states).map(|_| dfa_builder.new_state()).collect();
+
+        dfa_builder.link(states[0], states[0], symbols[0]);
+        dfa_builder.link(states[0], states[1], symbols[1]);
+        dfa_builder.link(states[1], states[1], symbols[0]);
+        dfa_builder.link(states[1], states[1], symbols[1]);
+        dfa_builder.link(states[2], states[0], symbols[1]);
+        dfa_builder.link(states[2], states[1], symbols[0]);
+
+        let dfa = dfa_builder.build(states[0]).unwrap();
+        assert_eq!(dfa.locate_dead_state(), Some(states[1]));
+    }
+
+    #[test]
+    fn test_no_dead_state() {
+        let (dfa, states, _) = build_test_data();
+        assert_eq!(dfa.locate_dead_state(), None)
     }
 }
