@@ -115,8 +115,13 @@ where
                 recent_lexeme_type = Some(lexeme_type.clone());
                 reader.set_tail();
             }
-            let next_input_symbol = InputSymbol { id: reader.read_next()? as u16 };
-            current_state = self.labeled_dfa.dfa.step(current_state, next_input_symbol)
+            match reader.read_next() {
+                Some(next_byte) => {
+                    let next_input_symbol = InputSymbol { id: next_byte as u16 };
+                    current_state = self.labeled_dfa.dfa.step(current_state, next_input_symbol);
+                }
+                None => break
+            }
         }
         recent_lexeme_type
     }
