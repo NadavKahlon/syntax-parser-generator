@@ -64,8 +64,12 @@ impl Regex {
     pub fn optional(option: Regex) -> Regex {
         Regex::union(vec![
             option,
-            Regex::union(Vec::new()),
+            Regex::epsilon(),
         ])
+    }
+
+    pub fn epsilon() -> Regex {
+        Regex::concat(vec![])
     }
 
     pub fn build_into_nfa(
