@@ -2,6 +2,7 @@ mod address_based;
 pub mod string_reader;
 
 pub trait Reader<T> {
+    fn is_available(&self) -> bool;
     fn read_next(&mut self) -> Option<T>;
     fn set_head(&mut self);
     fn set_tail(&mut self);

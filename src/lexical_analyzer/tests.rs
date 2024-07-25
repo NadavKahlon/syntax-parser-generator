@@ -145,3 +145,19 @@ fn test_lexical_analyzer_on_string() {
             .collect();
     assert_eq!(lexemes, analyzed_program())
 }
+
+#[test]
+#[should_panic]
+fn test_lexical_error() {
+    let lexical_analyzer = LexicalAnalyzer::new(vec![
+        LexemeDescriptor {
+            pattern: Regex::single_char('+'),
+            lexeme_type: (),
+        },
+    ]);
+    println!(
+        "{:?}",
+        lexical_analyzer.analyze(&mut ByteReader::from_string("++-+".to_string()))
+            .collect::<Vec<Lexeme<()>>>()
+    );
+}

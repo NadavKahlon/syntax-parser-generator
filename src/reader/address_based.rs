@@ -3,6 +3,7 @@ use crate::reader::Reader;
 
 pub trait AddressSpace<T> {
     fn read_at(&self, address: usize) -> Option<T>;
+    fn is_available(&self, address: usize) -> bool;
 }
 
 pub struct AddressBasedReader<T, U>
@@ -35,6 +36,10 @@ impl<T, U> Reader<T> for AddressBasedReader<T, U>
 where
     U: AddressSpace<T>,
 {
+    fn is_available(&self) -> bool {
+        self.address_space.is_available(self.cursor_address)
+    }
+
     fn read_next(&mut self) -> Option<T> {
         let result = self.address_space.read_at(self.cursor_address)?;
         self.cursor_address += 1;

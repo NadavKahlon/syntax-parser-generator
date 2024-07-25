@@ -14,6 +14,10 @@ impl AddressSpace<u8> for ByteAddressSpace {
     fn read_at(&self, address: usize) -> Option<u8> {
         self.data.get(address).copied()
     }
+
+    fn is_available(&self, address: usize) -> bool {
+        address < self.data.len()
+    }
 }
 
 pub type ByteReader = AddressBasedReader<u8, ByteAddressSpace>;

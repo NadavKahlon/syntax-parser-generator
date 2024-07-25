@@ -34,6 +34,12 @@ where
     dead_state: DfaStateHandle,
 }
 
+enum LexemeIdentificationResult<T> {
+    Identified(T),
+    InputExhausted,
+    LexicalError,
+}
+
 // Earlier lexeme descriptors are prioritized
 // TODO doc maximum number of patterns is 255 (not 256!)
 impl<T> LexicalAnalyzer<T>
@@ -96,6 +102,14 @@ where
             "A minimized DFA for regex-based lexical analyzer is expected to have a dead state"
         );
 
+        // Make sure the dead state is not the start state
+        if dead_state == optimized_labeled_dfa.dfa.initial_state {
+            panic!(
+                "The initial state of a DFA associated with a lexical analyzer should not be its \
+                dead state"
+            )
+        }
+
         LexicalAnalyzer { labeled_dfa: optimized_labeled_dfa, lexeme_types_map, dead_state }
     }
 
@@ -105,34 +119,70 @@ where
         LexemeIterator::new(self, reader)
     }
 
-    fn identify_next_lexeme(&self, reader: &mut impl Reader<u8>) -> Option<T> {
+    fn identify_next_lexeme(&self, reader: &mut impl Reader<u8>) -> LexemeIdentificationResult<T> {
         // TODO error recovery
         let mut recent_lexeme_type: Option<T> = None;
         let mut current_state = self.labeled_dfa.dfa.initial_state;
-        while current_state != self.dead_state {
+        let mut is_string_empty = true;
+
+        loop {
+
+            // Update the identified lexeme type if reached a known DFA label
             let current_state_label = self.labeled_dfa.get_label(current_state);
             if let Some(lexeme_type) = self.lexeme_types_map.get(&current_state_label) {
                 recent_lexeme_type = Some(lexeme_type.clone());
                 reader.set_tail();
             }
-            match reader.read_next() {
-                Some(next_byte) => {
-                    let next_input_symbol = InputSymbol { id: next_byte as u16 };
-                    current_state = self.labeled_dfa.dfa.step(current_state, next_input_symbol);
+
+            if (current_state == self.dead_state) || (!reader.is_available())
+            {
+                // When no more data can be effectively read
+                return if is_string_empty {
+                    LexemeIdentificationResult::InputExhausted
+                } else if let Some(lexeme_type) = recent_lexeme_type {
+                    LexemeIdentificationResult::Identified(lexeme_type)
+                } else {
+                    // We read some data, but couldn't identify available prefix
+                    LexemeIdentificationResult::LexicalError
                 }
-                None => break
             }
+
+            // When we can effectively read more data
+            let next_byte = reader.read_next().expect(
+                "Reader should not have been exhausted, since we just checked its availability"
+            );
+            let next_input_symbol = InputSymbol { id: next_byte as u16 };
+            current_state = self.labeled_dfa.dfa.step(current_state, next_input_symbol);
+            is_string_empty = false;
         }
-        recent_lexeme_type
     }
 
     fn collect_next_lexeme(&self, reader: &mut impl Reader<u8>) -> Option<Lexeme<T>> {
-        let lexeme_type = self.identify_next_lexeme(reader)?;
+
+        let lexeme_type = loop {
+            match self.identify_next_lexeme(reader) {
+                LexemeIdentificationResult::Identified(lexeme_type) => {
+                    break lexeme_type
+                }
+                LexemeIdentificationResult::InputExhausted => {
+                    return None
+                }
+                LexemeIdentificationResult::LexicalError => {
+                    self.error_recovery_routine(reader);
+                }
+            }
+        };
+
         let contents = String::from_utf8(reader.get_sequence().collect()).expect(
             "Tokens from lexically-analyzed Reader<u8> are expected to be UTF-8 encoded"
         );
         let lexeme = Lexeme { lexeme_type, contents };
         reader.restart_from_tail();
         Some(lexeme)
+    }
+
+    // TODO make this configurable
+    fn error_recovery_routine(&self, _reader: &mut impl Reader<u8>) {
+        panic!("Reader had a lexical error in it, and error recovery is not yet implemented");
     }
 }
