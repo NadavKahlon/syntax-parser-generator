@@ -1,3 +1,4 @@
+use std::ops::Index;
 use crate::handle::{Handle, Handled};
 
 pub struct HandledCollection<T>
@@ -19,9 +20,15 @@ where
         self.contents.push(item);
         (self.contents.len() - 1).into()
     }
+}
 
-    // Assuming failing accesses will never happen, as `handle` should be collected from `insert`
-    pub fn get(&self, key: Handle<T>) -> &T {
-        &self.contents[key.index()]
+impl<T> Index<Handle<T>> for HandledCollection<T>
+where
+    T: Handled,
+{
+    type Output = T;
+
+    fn index(&self, index: Handle<T>) -> &Self::Output {
+        &self.contents[index.index()]
     }
 }
