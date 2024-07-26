@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use serial_number::SerialNumber;
 
 mod serial_number;
+mod handle_vector_map;
 
 pub struct Handle<T, SerialNumberType>
 where
@@ -9,6 +10,15 @@ where
 {
     pub serial: SerialNumberType,
     phantom_data: PhantomData<T>,
+}
+
+impl<T, SerialNumberType> Handle<T, SerialNumberType>
+where
+    SerialNumberType: SerialNumber,
+{
+    fn index(&self) -> usize {
+        self.serial.into_index()
+    }
 }
 
 impl<T, SerialNumberType> From<usize> for Handle<T, SerialNumberType>
