@@ -1,8 +1,8 @@
 use serial_number::SerialNumber;
 
 mod serial_number;
-mod handle_map;
-mod handled_collection;
+pub mod handle_map;
+pub mod handled_collection;
 
 pub trait Handled {
     type SerialNumberType: SerialNumber;
