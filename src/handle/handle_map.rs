@@ -18,10 +18,6 @@ where
         Vec::new().into()
     }
 
-    pub fn with_capacity(capacity: usize) -> Self {
-        Vec::with_capacity(capacity).into()
-    }
-
     pub fn insert(&mut self, key: Handle<T>, item: U) -> bool {
         let result = self.get(key).is_none();
         if key.index() > self.contents.len() {
