@@ -1,4 +1,4 @@
-pub trait SerialNumber: Copy {
+pub trait SerialNumber: Clone + Copy {
     fn into_index(self) -> usize;
     fn from_index(index: usize) -> Self;
 }
