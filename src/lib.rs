@@ -5,3 +5,4 @@ mod automata;
 mod lexical_analyzer;
 mod reader;
 mod handle;
+mod parser;
