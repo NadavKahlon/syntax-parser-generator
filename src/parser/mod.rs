@@ -2,7 +2,7 @@ mod execution;
 
 use crate::handle::handle_map::HandleMap;
 use crate::handle::{Handle, Handled};
-use crate::handle::handled_collection::HandledCollection;
+use crate::handle::handled_vec::HandledVec;
 use crate::parser::execution::LrParserExecution;
 
 enum GrammarSymbolHandle<Terminal, Nonterminal>
@@ -72,7 +72,7 @@ where
     Nonterminal: Handled,
     ProductionRule: Handled,
 {
-    states: HandledCollection<LrParserState<Terminal, Nonterminal, ProductionRule>>,
+    states: HandledVec<LrParserState<Terminal, Nonterminal, ProductionRule>>,
     initial_state: Handle<LrParserState<Terminal, Nonterminal, ProductionRule>>,
 }
 
@@ -83,7 +83,7 @@ where
     ProductionRule: Handled,
 {
     fn new() -> Self {
-        let mut states = HandledCollection::new();
+        let mut states = HandledVec::new();
         let initial_state = states.insert(LrParserState::new());
         Self { states, initial_state }
     }

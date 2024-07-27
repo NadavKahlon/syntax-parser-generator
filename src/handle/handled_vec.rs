@@ -1,14 +1,14 @@
 use std::ops::{Index, IndexMut};
 use crate::handle::{Handle, Handled};
 
-pub struct HandledCollection<T>
+pub struct HandledVec<T>
 where
     T: Handled,
 {
     contents: Vec<T>,
 }
 
-impl<T> HandledCollection<T>
+impl<T> HandledVec<T>
 where
     T: Handled,
 {
@@ -22,7 +22,7 @@ where
     }
 }
 
-impl<T> Index<Handle<T>> for HandledCollection<T>
+impl<T> Index<Handle<T>> for HandledVec<T>
 where
     T: Handled,
 {
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<T> IndexMut<Handle<T>> for HandledCollection<T>
+impl<T> IndexMut<Handle<T>> for HandledVec<T>
 where
     T: Handled,
 {
