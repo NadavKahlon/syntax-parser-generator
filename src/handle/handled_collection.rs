@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 use crate::handle::{Handle, Handled};
 
 pub struct HandledCollection<T>
@@ -30,5 +30,14 @@ where
 
     fn index(&self, index: Handle<T>) -> &Self::Output {
         &self.contents[index.index()]
+    }
+}
+
+impl<T> IndexMut<Handle<T>> for HandledCollection<T>
+where
+    T: Handled,
+{
+    fn index_mut(&mut self, index: Handle<T>) -> &mut Self::Output {
+        &mut self.contents[index.index()]
     }
 }
