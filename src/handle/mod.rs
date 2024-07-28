@@ -3,6 +3,7 @@ use serial_number::SerialNumber;
 mod serial_number;
 pub mod handle_map;
 pub mod handled_vec;
+pub mod handled_hash_map;
 
 pub trait Handled {
     type SerialNumberType: SerialNumber;
@@ -12,6 +13,7 @@ pub trait Handled {
     }
 }
 
+#[derive(Eq, PartialEq, Hash, Debug)]
 pub struct Handle<T>
 where
     T: Handled + ?Sized,
