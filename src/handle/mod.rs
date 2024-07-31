@@ -14,7 +14,7 @@ pub trait Handled {
     }
 }
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Hash, Debug)]
 pub struct Handle<T>
 where
     T: Handled + ?Sized,
@@ -34,8 +34,15 @@ where
 impl<T> Copy for Handle<T>
 where
     T: Handled + ?Sized,
-{
+{}
 
+impl<T> PartialEq<Handle<T>> for Handle<T>
+where
+    T: Handled,
+{
+    fn eq(&self, other: &Handle<T>) -> bool {
+        self.core == other.core
+    }
 }
 
 

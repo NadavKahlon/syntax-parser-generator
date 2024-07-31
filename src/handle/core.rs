@@ -1,4 +1,6 @@
-pub trait HandleCore: Clone + Copy {
+use std::fmt::Debug;
+
+pub trait HandleCore: Clone + Copy + PartialEq + Debug {
     fn into_index(self) -> usize;
     fn from_index(index: usize) -> Self;
 }

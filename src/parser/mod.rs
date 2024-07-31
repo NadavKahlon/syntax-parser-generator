@@ -5,15 +5,6 @@ use crate::handle::{Handle, Handled};
 use crate::handle::handled_vec::HandledVec;
 use crate::parser::execution::LrParserExecution;
 
-enum GrammarSymbolHandle<Terminal, Nonterminal>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-{
-    Terminal(Handle<Terminal>),
-    Nonterminal(Handle<Nonterminal>),
-}
-
 #[derive(Clone, Copy)]
 enum LrParserAction<Terminal, Nonterminal, ProductionRule>
 where
