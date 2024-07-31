@@ -20,7 +20,7 @@ where
 
     pub fn insert(&mut self, key: Handle<T>, item: U) -> bool {
         let result = self.get(key).is_none();
-        if key.index() > self.contents.len() {
+        if key.index() >= self.contents.len() {
             self.contents.resize_with(key.index() + 1, || None);
         }
         self.contents[key.index()] = Some(item);
