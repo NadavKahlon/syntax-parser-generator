@@ -1,13 +1,13 @@
-use serial_number::SerialNumber;
+use core::HandleCore;
 
-mod serial_number;
+mod core;
 pub mod handle_map;
 pub mod handled_vec;
 pub mod handled_hash_map;
 pub mod auto;
 
 pub trait Handled {
-    type SerialNumberType: SerialNumber;
+    type HandleCoreType: HandleCore;
 
     fn new_handle(index: usize) -> Handle<Self> {
         index.into()
@@ -19,7 +19,7 @@ pub struct Handle<T>
 where
     T: Handled + ?Sized,
 {
-    pub serial: T::SerialNumberType,
+    pub core: T::HandleCoreType,
 }
 
 impl<T> Clone for Handle<T>
@@ -44,7 +44,7 @@ where
     T: Handled + ?Sized,
 {
     fn index(&self) -> usize {
-        self.serial.into_index()
+        self.core.into_index()
     }
 }
 
@@ -54,7 +54,7 @@ where
 {
     fn from(index: usize) -> Self {
         Self {
-            serial: T::SerialNumberType::from_index(index),
+            core: T::HandleCoreType::from_index(index),
         }
     }
 }
@@ -64,6 +64,6 @@ where
     T: Handled + ?Sized,
 {
     fn into(self) -> usize {
-        self.serial.into_index()
+        self.core.into_index()
     }
 }

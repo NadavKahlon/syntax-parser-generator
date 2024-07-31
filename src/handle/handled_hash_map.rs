@@ -63,7 +63,7 @@ mod tests {
     use super::*;
 
     impl Handled for u32 {
-        type SerialNumberType = u8;
+        type HandleCoreType = u8;
     }
 
     #[test]

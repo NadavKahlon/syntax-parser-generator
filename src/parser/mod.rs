@@ -63,7 +63,7 @@ where
     Nonterminal: Handled,
     ProductionRule: Handled,
 {
-    type SerialNumberType = u16;
+    type HandleCoreType = u16;
 }
 
 struct LrParser<Terminal, Nonterminal, ProductionRule>

@@ -1,9 +1,9 @@
-pub trait SerialNumber: Clone + Copy {
+pub trait HandleCore: Clone + Copy {
     fn into_index(self) -> usize;
     fn from_index(index: usize) -> Self;
 }
 
-impl SerialNumber for u16 {
+impl HandleCore for u16 {
     fn into_index(self) -> usize {
         self as usize
     }
@@ -13,7 +13,7 @@ impl SerialNumber for u16 {
     }
 }
 
-impl SerialNumber for u8 {
+impl HandleCore for u8 {
     fn into_index(self) -> usize {
         self as usize
     }

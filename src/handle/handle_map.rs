@@ -51,7 +51,7 @@ mod tests {
     struct DummyHandled { }
 
     impl Handled for DummyHandled {
-        type SerialNumberType = u16;
+        type HandleCoreType = u16;
     }
 
     #[test]
