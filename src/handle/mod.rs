@@ -4,6 +4,7 @@ mod serial_number;
 pub mod handle_map;
 pub mod handled_vec;
 pub mod handled_hash_map;
+pub mod auto;
 
 pub trait Handled {
     type SerialNumberType: SerialNumber;
