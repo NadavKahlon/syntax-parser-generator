@@ -64,7 +64,7 @@ where
     ProductionRule: Handled,
 {
     states: HandledVec<LrParserState<Terminal, Nonterminal, ProductionRule>>,
-    initial_state: Handle<LrParserState<Terminal, Nonterminal, ProductionRule>>,
+    initial_state: Option<Handle<LrParserState<Terminal, Nonterminal, ProductionRule>>>,
 }
 
 impl<Terminal, Nonterminal, ProductionRule> LrParser<Terminal, Nonterminal, ProductionRule>
@@ -74,9 +74,10 @@ where
     ProductionRule: Handled,
 {
     fn new() -> Self {
-        let mut states = HandledVec::new();
-        let initial_state = states.insert(LrParserState::new());
-        Self { states, initial_state }
+        Self {
+            states: HandledVec::new(),
+            initial_state: None,
+        }
     }
 
     fn new_state(&mut self) -> Handle<LrParserState<Terminal, Nonterminal, ProductionRule>> {
@@ -100,5 +101,12 @@ where
 
     fn new_execution(&self) -> LrParserExecution<Terminal, Nonterminal, ProductionRule> {
         LrParserExecution::new(self)
+    }
+
+
+    fn dedicate_initial_state(
+        &mut self, state: Handle<LrParserState<Terminal, Nonterminal, ProductionRule>>
+    ) {
+        self.initial_state = Some(state)
     }
 }

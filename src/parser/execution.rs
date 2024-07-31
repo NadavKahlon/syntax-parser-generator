@@ -49,9 +49,13 @@ where
     pub(super) fn new(machine: &'a LrParser<Terminal, Nonterminal, ProductionRule>)
                       -> LrParserExecution<Terminal, Nonterminal, ProductionRule>
     {
+        let initial_state = machine.initial_state.expect(
+            "Cannot create an execution environment for an LrParser with no dedicated initial \
+            state"
+        );
         Self {
             machine,
-            stack: vec![machine.initial_state],
+            stack: vec![initial_state],
         }
     }
 
@@ -177,6 +181,8 @@ mod tests {
         parser.set_goto(states[6], Nonterminal::T.handle(), states[9]);
         parser.set_goto(states[6], Nonterminal::F.handle(), states[3]);
         parser.set_goto(states[7], Nonterminal::F.handle(), states[10]);
+
+        parser.dedicate_initial_state(states[0]);
 
         parser
     }
