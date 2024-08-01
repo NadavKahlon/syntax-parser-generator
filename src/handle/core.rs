@@ -1,6 +1,7 @@
 use std::fmt::Debug;
+use std::hash::Hash;
 
-pub trait HandleCore: Clone + Copy + PartialEq + Debug {
+pub trait HandleCore: Clone + Copy + Eq + PartialEq + Hash + Debug {
     fn into_index(self) -> usize;
     fn from_index(index: usize) -> Self;
 }

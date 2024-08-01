@@ -1,5 +1,6 @@
 use std::any::type_name;
 use std::fmt::{Debug, Formatter};
+use std::hash::{Hash, Hasher};
 use core::HandleCore;
 
 mod core;
@@ -17,7 +18,6 @@ pub trait Handled {
     }
 }
 
-#[derive(Hash)]
 pub struct Handle<T>
 where
     T: Handled + ?Sized,
@@ -48,9 +48,23 @@ where
     }
 }
 
-impl<T> Debug for Handle<T>
+impl<T> Eq for Handle<T>
+where
+    T: Handled,
+{}
+
+impl<T> Hash for Handle<T>
 where
     T: Handled
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.core.hash(state)
+    }
+}
+
+impl<T> Debug for Handle<T>
+where
+    T: Handled,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Handle<{:?}>({:?})", type_name::<T>(), self.core.into_index())
