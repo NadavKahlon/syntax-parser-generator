@@ -1,4 +1,5 @@
 use std::ops::{Index, IndexMut};
+use std::slice::Iter;
 use crate::handle::{Handle, Handled};
 
 pub struct HandledVec<T>
@@ -39,5 +40,17 @@ where
 {
     fn index_mut(&mut self, index: Handle<T>) -> &mut Self::Output {
         &mut self.contents[index.index()]
+    }
+}
+
+impl<'a, T> IntoIterator for &'a HandledVec<T>
+where
+    T: Handled,
+{
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.contents.iter()
     }
 }

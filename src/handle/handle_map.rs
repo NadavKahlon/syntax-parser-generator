@@ -43,7 +43,7 @@ where
         (&self).into_iter()
     }
 
-    pub fn keys(&self) -> impl Iterator + '_ {
+    pub fn keys<'a>(&'a self) -> impl Iterator<Item=Handle<T>> + 'a {
         self.iter().map(|(key, _)| key)
     }
 }
