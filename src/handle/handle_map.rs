@@ -30,6 +30,10 @@ where
     pub fn get(&self, key: Handle<T>) -> Option<&U> {
         self.contents.get(key.index())?.as_ref()
     }
+
+    pub fn contains_key(&self, key: Handle<T>) -> bool {
+        !self.get(key).is_none()
+    }
 }
 
 impl<T, U> From<Vec<Option<U>>> for HandleMap<T, U>
