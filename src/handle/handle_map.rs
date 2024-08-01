@@ -38,6 +38,10 @@ where
     pub fn contains_key(&self, key: Handle<T>) -> bool {
         !self.get(key).is_none()
     }
+
+    pub fn iter(&self) -> Iter<T, U> {
+        (&self).into_iter()
+    }
 }
 
 impl<T, U> From<Vec<Option<U>>> for HandleMap<T, U>
@@ -52,11 +56,63 @@ where
     }
 }
 
+impl<'a, T, U> IntoIterator for &'a HandleMap<T, U>
+where
+    T: Handled + ?Sized,
+{
+    type Item = (Handle<T>, &'a U);
+    type IntoIter = Iter<'a, T, U>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Iter::new(self)
+    }
+}
+
+pub struct Iter<'a, T, U>
+where
+    T: Handled + ?Sized,
+{
+    map: &'a HandleMap<T, U>,
+    curr_index: usize,
+}
+
+impl<'a, T, U> Iter<'a, T, U>
+where
+    T: Handled + ?Sized,
+{
+    fn new(map: &'a HandleMap<T, U>) -> Self {
+        Self { map, curr_index: 0 }
+    }
+}
+
+impl<'a, T, U> Iterator for Iter<'a, T, U>
+where
+    T: Handled + ?Sized,
+{
+    type Item = (Handle<T>, &'a U);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.map.contents.get(self.curr_index)? {
+                None => {
+                    self.curr_index += 1
+                }
+                Some(content) => {
+                    let handle: Handle<T> = self.curr_index.into();
+                    self.curr_index += 1;
+                    break Some((handle, content));
+                }
+            }
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    struct DummyHandled { }
+    struct DummyHandled {}
 
     impl Handled for DummyHandled {
         type HandleCoreType = u16;
@@ -71,5 +127,23 @@ mod tests {
         assert_eq!(map.insert(1.into(), 1), false);
         assert_eq!(map.get(2.into()), None);
         assert_eq!(map.get(1.into()), Some(&1));
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let mut map: HandleMap<DummyHandled, i32> = HandleMap::new();
+        map.insert(1.into(), 1);
+        map.insert(50.into(), 32);
+        map.insert(2.into(), 2);
+
+
+        assert_eq!(
+            map.into_iter().collect::<Vec<(Handle<DummyHandled>, &i32)>>(),
+            vec![
+                (1.into(), &1),
+                (2.into(), &2),
+                (50.into(), &32),
+            ]
+        )
     }
 }
