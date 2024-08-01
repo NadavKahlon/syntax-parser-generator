@@ -42,6 +42,10 @@ where
     pub fn iter(&self) -> Iter<T, U> {
         (&self).into_iter()
     }
+
+    pub fn keys(&self) -> impl Iterator + '_ {
+        self.iter().map(|(key, _)| key)
+    }
 }
 
 impl<T, U> From<Vec<Option<U>>> for HandleMap<T, U>
