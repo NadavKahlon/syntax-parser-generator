@@ -31,6 +31,10 @@ where
         self.contents.get(key.index())?.as_ref()
     }
 
+    pub fn get_mut(&mut self, key: Handle<T>) -> Option<&mut U> {
+        self.contents.get_mut(key.index())?.as_mut()
+    }
+
     pub fn contains_key(&self, key: Handle<T>) -> bool {
         !self.get(key).is_none()
     }
