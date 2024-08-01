@@ -74,6 +74,15 @@ where
     pub fn iter(&self) -> Iter<T> {
         Iter::new(self)
     }
+
+    fn canonicalize(&self) -> Self {
+        // Removes trailing zeros to get the set into its canonical form
+        let mut bytes = self.bytes.clone();
+        while let Some(&0) = bytes.last() {
+            bytes.pop();
+        }
+        Self { bytes, phantom_data: Default::default() }
+    }
 }
 
 impl<T> FromIterator<Handle<T>> for HandleBitSet<T>
@@ -97,7 +106,7 @@ where
     T: Handled,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.bytes == other.bytes
+        self.canonicalize().bytes == other.canonicalize().bytes
     }
 }
 
@@ -105,7 +114,7 @@ impl<T: Handled> Eq for HandleBitSet<T> {}
 
 impl<T: Handled> Hash for HandleBitSet<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.bytes.hash(state)
+        self.canonicalize().bytes.hash(state)
     }
 }
 
@@ -213,5 +222,18 @@ mod tests {
                 .into_iter().collect(),
         ].into_iter().collect();
         assert_eq!(set_hash_set.len(), 3)
+    }
+
+    #[test]
+    fn test_canonicalize() {
+        let set1: HandleBitSet<T> = HandleBitSet {
+            bytes: vec![1, 3, 255, 0, 5, 0, 6, 0],
+            phantom_data: Default::default(),
+        };
+        let set2: HandleBitSet<T> = HandleBitSet {
+            bytes: vec![1, 3, 255, 0, 5, 0, 6, 0, 0],
+            phantom_data: Default::default(),
+        };
+        assert_eq!(set1, set2)
     }
 }
