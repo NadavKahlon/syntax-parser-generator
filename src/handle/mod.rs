@@ -1,6 +1,6 @@
 use std::any::type_name;
 use std::fmt::{Debug, Formatter};
-use std::hash::{Hash, Hasher};
+use derive_where::derive_where;
 use core::HandleCore;
 
 mod core;
@@ -18,6 +18,7 @@ pub trait Handled {
     }
 }
 
+#[derive_where(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Handle<T>
 where
     T: Handled + ?Sized,
@@ -25,40 +26,12 @@ where
     pub core: T::HandleCoreType,
 }
 
-impl<T> Clone for Handle<T>
-where
-    T: ?Sized + Handled,
-{
-    fn clone(&self) -> Self {
-        Self::from(self.index())
-    }
-}
-
-impl<T> Copy for Handle<T>
+impl<T> Handle<T>
 where
     T: Handled + ?Sized,
-{}
-
-impl<T> PartialEq<Handle<T>> for Handle<T>
-where
-    T: Handled,
 {
-    fn eq(&self, other: &Handle<T>) -> bool {
-        self.core == other.core
-    }
-}
-
-impl<T> Eq for Handle<T>
-where
-    T: Handled,
-{}
-
-impl<T> Hash for Handle<T>
-where
-    T: Handled
-{
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.core.hash(state)
+    fn index(&self) -> usize {
+        self.core.into_index()
     }
 }
 
@@ -68,16 +41,6 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Handle<{:?}>({:?})", type_name::<T>(), self.core.into_index())
-    }
-}
-
-
-impl<T> Handle<T>
-where
-    T: Handled + ?Sized,
-{
-    fn index(&self) -> usize {
-        self.core.into_index()
     }
 }
 

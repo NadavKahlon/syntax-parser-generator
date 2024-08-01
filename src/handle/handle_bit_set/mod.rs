@@ -7,9 +7,11 @@ pub mod iterators;
 use std::cmp::max;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use derive_where::derive_where;
 use crate::handle::{Handle, Handled};
 use crate::handle::core::HandleCore;
 
+#[derive_where(Clone)]
 pub struct HandleBitSet<T>
 where
     T: Handled,
@@ -70,17 +72,11 @@ where
             phantom_data: Default::default(),
         }
     }
-}
 
-impl<T: Handled> Clone for HandleBitSet<T> {
-    fn clone(&self) -> Self {
-        Self {
-            bytes: self.bytes.clone(),
-            phantom_data: Default::default(),
-        }
+    pub fn is_empty(&self) -> bool {
+        self.bytes.iter().all(|&byte| byte == 0)
     }
 }
-
 
 impl<T> Debug for HandleBitSet<T>
 where

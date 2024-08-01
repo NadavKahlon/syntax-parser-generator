@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
+use derive_where::derive_where;
 use crate::handle::{Handle, Handled};
 
 // TODO "complete map", where everything is known (no "Option<U>", just U). Why? to half tne space
+#[derive_where(Debug, PartialEq, Eq; U)]
 pub struct HandleMap<T, U>
 where
     T: Handled + ?Sized,

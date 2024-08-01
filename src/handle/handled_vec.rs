@@ -1,7 +1,9 @@
+use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::slice::Iter;
 use crate::handle::{Handle, Handled};
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct HandledVec<T>
 where
     T: Handled,
@@ -20,6 +22,11 @@ where
     pub fn insert(&mut self, item: T) -> Handle<T> {
         self.contents.push(item);
         (self.contents.len() - 1).into()
+    }
+
+    pub fn list_handles(&self) -> impl Iterator<Item=Handle<T>> {
+        (0..self.contents.len())
+            .map(|index| index.into())
     }
 }
 
