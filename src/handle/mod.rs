@@ -7,6 +7,7 @@ pub mod handle_map;
 pub mod handled_vec;
 pub mod handled_hash_map;
 pub mod auto;
+pub mod handle_bit_set;
 
 pub trait Handled {
     type HandleCoreType: HandleCore;
