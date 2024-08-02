@@ -1,4 +1,3 @@
-use std::any::type_name;
 use std::fmt::{Debug, Formatter};
 use derive_where::derive_where;
 use core::HandleCore;
@@ -40,7 +39,7 @@ where
     T: Handled,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Handle<{:?}>({:?})", type_name::<T>(), self.core.into_index())
+        write!(f, "Handle({:?})", self.core.into_index())
     }
 }
 

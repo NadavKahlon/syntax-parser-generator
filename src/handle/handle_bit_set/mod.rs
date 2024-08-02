@@ -83,6 +83,6 @@ where
     T: Handled,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{{:?}}}", self.iter().collect::<Vec<Handle<T>>>())
+        self.iter().collect::<Vec<Handle<T>>>().fmt(f)
     }
 }

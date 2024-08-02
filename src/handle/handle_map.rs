@@ -1,9 +1,10 @@
+use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use derive_where::derive_where;
 use crate::handle::{Handle, Handled};
 
 // TODO "complete map", where everything is known (no "Option<U>", just U). Why? to half tne space
-#[derive_where(Debug, PartialEq, Eq; U)]
+#[derive_where(PartialEq, Eq; U)]
 pub struct HandleMap<T, U>
 where
     T: Handled + ?Sized,
@@ -153,3 +154,15 @@ mod tests {
         )
     }
 }
+
+impl<T, U> Debug for HandleMap<T, U>
+where
+    T: Handled,
+    U: Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.iter().collect::<Vec<(Handle<T>, &U)>>()
+            .fmt(f)
+    }
+}
+
