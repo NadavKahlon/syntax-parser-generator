@@ -62,7 +62,7 @@ where
 mod tests {
     use super::*;
 
-    impl Handled for u32 {
+    impl Handled for i32 {
         type HandleCoreType = u8;
     }
 

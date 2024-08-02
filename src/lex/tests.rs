@@ -1,12 +1,12 @@
-use crate::lexical_analyzer::LexicalAnalyzer;
-use crate::lexical_analyzer::Lexeme;
+use crate::lex::Lexeme;
 
-use crate::lexical_analyzer::Regex;
+use crate::lex::Regex;
 
-use crate::lexical_analyzer::LexemeDescriptor;
+use crate::lex::LexemeDescriptor;
+use crate::lex::lexical_analyzer::LexicalAnalyzer;
 use crate::reader::string_reader::ByteReader;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum TestLexemeType {
     If,
     While,

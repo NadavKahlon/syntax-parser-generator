@@ -6,7 +6,6 @@
 pub mod nfa;
 pub mod dfa;
 mod nfa_to_dfa;
-pub mod labeled_dfa;
 mod dfa_minimize;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]

@@ -1,8 +1,7 @@
 // IMPROVE: consider using tuple struct throughout
 
-pub mod regex;
 mod automata;
-mod lexical_analyzer;
+mod lex;
 mod reader;
 mod handle;
 mod parser;

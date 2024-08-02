@@ -1,143 +1,185 @@
-use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
-use bit_set::BitSet;
-use super::nfa::{Nfa, NfaStateHandle};
-use super::dfa::{Dfa, DfaBuilder, DfaStateHandle};
-use super::InputSymbol;
+use std::collections::HashMap;
+use crate::automata::dfa::{Dfa, DfaState};
+use crate::automata::nfa::{Nfa, NfaState};
+use crate::handle::handle_bit_set::HandleBitSet;
+use crate::handle::{Handle, Handled};
 
-// TODO consider relocating this
-impl Nfa {
-    pub fn compile_to_dfa(&self) -> (Dfa, HashMap<DfaStateHandle, HashSet<NfaStateHandle>>) {
-        NfaToDfaCompiler::new(self).compile()
+impl<Symbol, Label> Nfa<Symbol, Label>
+where
+    Symbol: Handled,
+{
+    pub fn compile_to_dfa<F, DfaLabel>(&self, label_reduction: F) -> Dfa<Symbol, DfaLabel>
+    where
+        F: Fn(Vec<&Label>) -> Option<DfaLabel>,
+    {
+        NfaToDfaCompiler::new(self, label_reduction).compile()
     }
 }
 
-struct NfaToDfaCompiler<'a> {
-    nfa: &'a Nfa,
-    dfa_builder: DfaBuilder,
-    dfa_states_map: HashMap<NfaStatesSetHashableWrapper, DfaStateHandle>,
-    unprocessed_new_states: Vec<(DfaStateHandle, HashSet<NfaStateHandle>)>,
+struct NfaToDfaCompiler<'a, Symbol, NfaLabel, DfaLabel, F>
+where
+    Symbol: Handled,
+    F: Fn(Vec<&NfaLabel>) -> Option<DfaLabel>,
+{
+    nfa: &'a Nfa<Symbol, NfaLabel>,
+    dfa: Dfa<Symbol, DfaLabel>,
+    dfa_states_map: HashMap<
+        HandleBitSet<NfaState<Symbol, NfaLabel>>,
+        Handle<DfaState<Symbol, DfaLabel>>
+    >,
+    unprocessed_new_states: Vec<(
+        HandleBitSet<NfaState<Symbol, NfaLabel>>,
+        Handle<DfaState<Symbol, DfaLabel>>,
+    )>,
+    label_reduction: F,
+    all_symbols: Vec<Handle<Symbol>>,
+    initial_nfa_state: Handle<NfaState<Symbol, NfaLabel>>,
 }
 
-impl<'a> NfaToDfaCompiler<'a> {
-    fn new(nfa: &'a Nfa) -> NfaToDfaCompiler {
-        NfaToDfaCompiler {
+impl<'a, Symbol, NfaLabel, DfaLabel, F> NfaToDfaCompiler<'a, Symbol, NfaLabel, DfaLabel, F>
+where
+    Symbol: Handled,
+    F: Fn(Vec<&NfaLabel>) -> Option<DfaLabel>,
+{
+    fn new(nfa: &'a Nfa<Symbol, NfaLabel>, label_reduction: F) -> Self {
+        let initial_nfa_state = nfa.initial_state.expect(
+            "Cannot compile an NFA with no initial state into a DFA"
+        );
+        Self {
             nfa,
-            dfa_builder: DfaBuilder::new(nfa.num_symbols as usize),
+            label_reduction,
+            initial_nfa_state,
+            dfa: Dfa::new(),
             dfa_states_map: HashMap::new(),
-            unprocessed_new_states: vec![],
+            unprocessed_new_states: Vec::new(),
+            all_symbols: nfa.list_symbols().collect(),
         }
     }
 
-    fn compile(mut self) -> (Dfa, HashMap<DfaStateHandle, HashSet<NfaStateHandle>>) {
-        let initial_nfa_state_set: HashSet<NfaStateHandle> =
-            self.nfa.epsilon_closure(&[self.nfa.initial_state].into());
-        let initial_dfa_state = self.install_new_state(initial_nfa_state_set);
+    fn compile(mut self) -> Dfa<Symbol, DfaLabel> {
+        let initial_nfa_state_set: HandleBitSet<NfaState<Symbol, NfaLabel>> =
+            self.nfa.epsilon_closure(&vec![self.initial_nfa_state].iter().collect());
+        let initial_dfa_state = self.install_new_state(&initial_nfa_state_set);
+        self.dfa.set_initial_state(initial_dfa_state);
 
         loop {
             match self.unprocessed_new_states.pop() {
-                Some((dfa_state, nfa_states_set)) => {
-                    self.process_new_state(dfa_state, nfa_states_set);
+                Some((nfa_states, dfa_state)) => {
+                    self.process_new_state(nfa_states, dfa_state);
                 }
                 None => break,
             }
         }
-        let nfa_states_map = self.build_nfa_states_map();
 
-        let dfa = self.dfa_builder
-            .build(initial_dfa_state)
-            .expect("NfaToDfaCompiler should handle all symbol transitions");
-
-        (dfa, nfa_states_map)
+        self.reduce_labels();
+        self.dfa
     }
 
-    fn install_new_state(&mut self, nfa_states_set: HashSet<NfaStateHandle>) -> DfaStateHandle {
-        let dfa_state = self.dfa_builder.new_state();
-        self.dfa_states_map.insert(NfaStatesSetHashableWrapper(nfa_states_set.clone()), dfa_state);
-        self.unprocessed_new_states.push((dfa_state, nfa_states_set));
+    fn install_new_state(
+        &mut self, nfa_states: &HandleBitSet<NfaState<Symbol, NfaLabel>>,
+    ) -> Handle<DfaState<Symbol, DfaLabel>>
+    {
+        let dfa_state = self.dfa.new_state();
+        self.dfa_states_map.insert(nfa_states.clone(), dfa_state);
+        self.unprocessed_new_states.push((nfa_states.clone(), dfa_state));
         dfa_state
     }
 
+
     fn process_new_state(
-        &mut self, dfa_state: DfaStateHandle, nfa_states_set: HashSet<NfaStateHandle>,
+        &mut self,
+        nfa_states: HandleBitSet<NfaState<Symbol, NfaLabel>>,
+        dfa_state: Handle<DfaState<Symbol, DfaLabel>>,
     ) {
-        for id in 0_u16..self.nfa.num_symbols {
-            let symbol = InputSymbol { id };
-            let target_nfa_states_set =
-                self.nfa.epsilon_closure(&self.nfa.move_by_symbol(&nfa_states_set, symbol));
+        for &symbol in &self.all_symbols.clone() {
+            let target_nfa_states =
+                self.nfa.epsilon_closure(&self.nfa.move_by_symbol(&nfa_states, symbol));
 
-            // TODO prettify the borrowing juggling we do here because of the wrapper
-            let target_nfa_states_set_wrapper = NfaStatesSetHashableWrapper(target_nfa_states_set);
-            if !self.dfa_states_map.contains_key(&target_nfa_states_set_wrapper) {
-                self.install_new_state(target_nfa_states_set_wrapper.clone().0);
+            if !target_nfa_states.is_empty() {
+                let target_dfa_state =
+                    match self.dfa_states_map.get(&target_nfa_states) {
+                        None => self.install_new_state(&target_nfa_states),
+                        Some(&dfa_state) => dfa_state,
+                    };
+
+                self.dfa.link(dfa_state, target_dfa_state, symbol);
             }
-
-            let target_dfa_state =
-                self.dfa_states_map.get(&target_nfa_states_set_wrapper)
-                    .expect("DFA state associated with NFA-states-set should just have been added")
-                    .clone();
-            self.dfa_builder.link(dfa_state, target_dfa_state, symbol);
         }
     }
 
-    fn build_nfa_states_map(&self) -> HashMap<DfaStateHandle, HashSet<NfaStateHandle>> {
-        let mut result: HashMap<DfaStateHandle, HashSet<NfaStateHandle>> = HashMap::new();
+    fn reduce_labels(&mut self) {
         for (
-            NfaStatesSetHashableWrapper(nfa_states),
-            dfa_state
+            nfa_states,
+            &dfa_state
         ) in &self.dfa_states_map {
-            result.insert(dfa_state.clone(), nfa_states.clone());
+
+            let nfa_labels = nfa_states
+                .iter()
+                .flat_map(|nfa_state| self.nfa.get_label(nfa_state))
+                .collect();
+
+            let label = (self.label_reduction)(nfa_labels);
+            self.dfa.label(dfa_state, label);
         }
-        result
-    }
-}
-
-// Required for efficient lookup of the DFA state associated with a given set of NFA states
-#[derive(PartialEq, Eq, Clone)]
-struct NfaStatesSetHashableWrapper(HashSet<NfaStateHandle>);
-
-impl Hash for NfaStatesSetHashableWrapper {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: Hasher,
-    {
-        let bitset: BitSet = self.0
-            .iter()
-            .map(|state| state.id as usize)
-            .collect();
-        bitset.hash(state);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::hash::DefaultHasher;
     use super::*;
+    use crate::handle::auto::AutomaticallyHandled;
 
-    #[test]
-    fn test_nfa_states_set_hashing() {
-        let set1: HashSet<NfaStateHandle> = [
-            NfaStateHandle { id: 0 },
-            NfaStateHandle { id: 1 },
-            NfaStateHandle { id: 2 },
-            NfaStateHandle { id: 1 },
-        ].into_iter().collect();
-        let set2: HashSet<NfaStateHandle> = [
-            NfaStateHandle { id: 2 },
-            NfaStateHandle { id: 0 },
-            NfaStateHandle { id: 0 },
-            NfaStateHandle { id: 1 },
-            NfaStateHandle { id: 2 },
-        ].into_iter().collect();
-
-        assert_eq!(set1, set2);
-        assert_eq!(hash_nfa_states_set(set1), hash_nfa_states_set(set2));
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    enum Symbol {
+        Symbol1,
+        Symbol2
+    }
+    impl AutomaticallyHandled for Symbol {
+        type HandleCoreType = u8;
+        fn serial(&self) -> usize { *self as usize }
     }
 
-    fn hash_nfa_states_set(set: HashSet<NfaStateHandle>) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        let set_wrapper = NfaStatesSetHashableWrapper(set);
-        set_wrapper.hash(&mut hasher);
-        hasher.finish()
+    fn build_dfa_by_compiling_nfa() -> Dfa<Symbol, ()> {
+        let mut nfa = Nfa::new();
+        let states = vec![nfa.new_state(), nfa.new_state(), nfa.new_state()];
+
+        nfa.link(states[0], states[1], Some(Symbol::Symbol1.handle()));
+        nfa.link(states[1], states[0], None);
+        nfa.link(states[1], states[2], Some(Symbol::Symbol2.handle()));
+
+        nfa.set_initial_state(states[0]);
+        nfa.label(states[2], Some(()));
+
+        nfa.compile_to_dfa(|labels| {
+            if labels.is_empty() {
+                None
+            } else {
+                Some(())
+            }
+        })
+    }
+
+    fn build_dfa_manually() -> Dfa<Symbol, ()> {
+        let mut dfa = Dfa::new();
+
+        let state_0 = dfa.new_state();
+        let state_0_1 = dfa.new_state();
+        let state_2 = dfa.new_state();
+
+        dfa.link(state_0, state_0_1, Symbol::Symbol1.handle());
+        dfa.link(state_0_1, state_0_1, Symbol::Symbol1.handle());
+        dfa.link(state_0_1, state_2, Symbol::Symbol2.handle());
+
+        dfa.set_initial_state(state_0);
+        dfa.label(state_2, Some(()));
+        dfa
+    }
+
+    #[test]
+    fn test() {
+        assert_eq!(
+            build_dfa_by_compiling_nfa(),
+            build_dfa_manually(),
+        )
     }
 }

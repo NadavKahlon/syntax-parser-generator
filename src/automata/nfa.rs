@@ -1,86 +1,102 @@
 use std::collections::HashSet;
-use super::InputSymbol;
+use crate::handle::{Handle, Handled};
+use crate::handle::handle_bit_set::HandleBitSet;
+use crate::handle::handle_map::HandleMap;
+use crate::handle::handled_vec::HandledVec;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct NfaStateHandle {
-    pub id: u16,
+pub struct NfaState<Symbol, Label>
+where
+    Symbol: Handled,
+{
+    epsilon_transitions: HashSet<Handle<NfaState<Symbol, Label>>>,
+    symbol_transitions: HandleMap<Symbol, HashSet<Handle<NfaState<Symbol, Label>>>>,
+    label: Option<Label>,
 }
 
-struct NfaState {
-    epsilon_transitions: HashSet<NfaStateHandle>,
-    symbol_transitions: Box<[HashSet<NfaStateHandle>]>,  // Symbols have constant size
+impl<Symbol: Handled, Label> Handled for NfaState<Symbol, Label> {
+    type HandleCoreType = u16;
 }
 
-impl NfaState {
-    fn new(num_symbols: u16) -> NfaState {
-        NfaState {
+impl<Symbol, Label> NfaState<Symbol, Label>
+where
+    Symbol: Handled,
+{
+    fn new() -> Self {
+        Self {
             epsilon_transitions: HashSet::new(),
-            symbol_transitions: vec![HashSet::new(); num_symbols as usize].into_boxed_slice(),
+            symbol_transitions: HandleMap::new(),
+            label: None,
         }
     }
 }
 
-// More optimized to have a dynamic nature - an automaton being built live
-pub struct NfaBuilder {
-    num_symbols: u16,
-    states: Vec<NfaState>,
+pub struct Nfa<Symbol, Label>
+where
+    Symbol: Handled,
+{
+    states: HandledVec<NfaState<Symbol, Label>>,    // TODO this does not utilize locality in space
+    pub(super) initial_state: Option<Handle<NfaState<Symbol, Label>>>,
 }
 
-impl NfaBuilder {
-    pub fn new(num_symbols: u16) -> NfaBuilder {
-        NfaBuilder {
-            num_symbols,
-            states: Vec::new(),
+impl<Symbol, Label> Nfa<Symbol, Label>
+where
+    Symbol: Handled,
+{
+    pub fn new() -> Self {
+        Self {
+            states: HandledVec::new(),
+            initial_state: None,
         }
     }
 
-    pub fn new_state(&mut self) -> NfaStateHandle {
-        self.states.push(NfaState::new(self.num_symbols));
-        NfaStateHandle {
-            id: (self.states.len() - 1) as u16  // TODO possible type confusion vulnerability
-        }
+    pub fn new_state(&mut self) -> Handle<NfaState<Symbol, Label>> {
+        self.states.insert(NfaState::new())
+    }
+
+    pub fn set_initial_state(&mut self, initial_state: Handle<NfaState<Symbol, Label>>) {
+        self.initial_state = Some(initial_state);
     }
 
     pub fn link(
-        &mut self, src: NfaStateHandle, dst: NfaStateHandle,
-        transition_label: Option<InputSymbol>,
+        &mut self, src: Handle<NfaState<Symbol, Label>>, dst: Handle<NfaState<Symbol, Label>>,
+        transition_label: Option<Handle<Symbol>>,
     ) {
         match transition_label {
-            Some(InputSymbol { id: symbol_id }) => {
-                self.states[src.id as usize].symbol_transitions[symbol_id as usize].insert(dst);
+            None => self.states[src].epsilon_transitions.insert(dst),
+
+            Some(symbol) => {
+                if !self.states[src].symbol_transitions.contains_key(symbol) {
+                    self.states[src].symbol_transitions.insert(symbol, HashSet::new());
+                }
+                let set =
+                    self.states[src].symbol_transitions.get_mut(symbol).expect(
+                        "Transition set for specified symbol should just have been added"
+                    );
+                set.insert(dst)
             }
-            None => {
-                self.states[src.id as usize].epsilon_transitions.insert(dst);
-            }
-        }
+        };
     }
 
-    pub fn build(self, initial_state: NfaStateHandle) -> Nfa {
-        Nfa {
-            num_symbols: self.num_symbols,
-            states: self.states.into_boxed_slice(),
-            initial_state,
-        }
+    pub fn label(&mut self, state: Handle<NfaState<Symbol, Label>>, label: Option<Label>) {
+        self.states[state].label = label
     }
-}
 
-// More optimized to have a static nature - an automaton on which only analyses are performed
-pub struct Nfa {
-    pub num_symbols: u16,
-    states: Box<[NfaState]>,
-    pub initial_state: NfaStateHandle,
-}
+    pub fn get_label(&self, state: Handle<NfaState<Symbol, Label>>) -> &Option<Label> {
+        &self.states[state].label
+    }
 
-impl Nfa {
-    pub fn epsilon_closure(&self, states: &HashSet<NfaStateHandle>) -> HashSet<NfaStateHandle> {
-        let mut states_to_process: Vec<NfaStateHandle> = states.clone().into_iter().collect();
-        let mut closure: HashSet<NfaStateHandle> = HashSet::new();
+    pub(super) fn epsilon_closure(
+        &self, states: &HandleBitSet<NfaState<Symbol, Label>>,
+    ) -> HandleBitSet<NfaState<Symbol, Label>> {
+        let mut states_to_process: Vec<Handle<NfaState<Symbol, Label>>> =
+            states.clone().iter().collect();
+        let mut closure: HandleBitSet<NfaState<Symbol, Label>> = HandleBitSet::new();
 
         loop {
             match states_to_process.pop() {
                 Some(state) => {
                     if closure.insert(state) {
-                        states_to_process.extend(&self.states[state.id as usize].epsilon_transitions)
+                        states_to_process.extend(&self.states[state].epsilon_transitions)
                     }
                 }
                 None => break
@@ -90,56 +106,74 @@ impl Nfa {
         closure
     }
 
-    pub fn move_by_symbol(&self, states: &HashSet<NfaStateHandle>, symbol: InputSymbol) -> HashSet<NfaStateHandle> {
-        states
-            .iter()
-            .map(|state| { &self.states[state.id as usize].symbol_transitions[symbol.id as usize] })
-            .flat_map(HashSet::iter)
-            .map(NfaStateHandle::clone)
-            .collect()
+    pub(super) fn move_by_symbol(
+        &self, states: &HandleBitSet<NfaState<Symbol, Label>>, symbol: Handle<Symbol>,
+    ) -> HandleBitSet<NfaState<Symbol, Label>> {
+        let mut result = HandleBitSet::new();
+
+        for state in states {
+            if let Some(destinations) =
+                self.states[state].symbol_transitions.get(symbol)
+            {
+                result.extend(destinations);
+            }
+        }
+        result
+    }
+
+    pub(super) fn list_symbols(&self) -> impl Iterator<Item=Handle<Symbol>> {
+        let mut symbols: HashSet<Handle<Symbol>> = HashSet::new();
+        for state in &self.states {
+            symbols.extend(state.symbol_transitions.keys());
+        }
+        symbols.into_iter()
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::handle::auto::AutomaticallyHandled;
     use super::*;
 
-    fn build_test_data() -> (Nfa, Vec<NfaStateHandle>, Vec<InputSymbol>) {
-        let num_symbols = 1;
-        let num_states = 3;
+    #[derive(Clone, Copy)]
+    enum Symbol {
+        Symbol0,
+    }
+    impl AutomaticallyHandled for Symbol {
+        type HandleCoreType = u8;
+        fn serial(&self) -> usize { *self as usize }
+    }
 
-        let symbols: Vec<InputSymbol> =
-            (0..num_symbols)
-                .map(|id| InputSymbol { id })
-                .collect();
-        let mut nfa_builder = NfaBuilder::new(symbols.len() as u16);
-        let states: Vec<NfaStateHandle> = (0..num_states).map(|_| nfa_builder.new_state()).collect();
 
-        nfa_builder.link(states[0], states[1], None);
-        nfa_builder.link(states[0], states[1], Some(symbols[0]));
-        nfa_builder.link(states[0], states[2], Some(symbols[0]));
-        nfa_builder.link(states[2], states[0], Some(symbols[0]));
-        nfa_builder.link(states[2], states[0], None);
+    fn build_test_data() -> (Nfa<Symbol, u32>, Vec<Handle<NfaState<Symbol, u32>>>) {
+        let mut nfa = Nfa::new();
+        let states =
+            vec![nfa.new_state(), nfa.new_state(), nfa.new_state()];
 
-        (nfa_builder.build(states[0]), states, symbols)
+        nfa.link(states[0], states[1], None);
+        nfa.link(states[0], states[1], Some(Symbol::Symbol0.handle()));
+        nfa.link(states[0], states[2], Some(Symbol::Symbol0.handle()));
+        nfa.link(states[2], states[0], Some(Symbol::Symbol0.handle()));
+        nfa.link(states[2], states[0], None);
+
+        (nfa, states)
     }
 
     #[test]
     fn test_nfa_closure() {
-        let (nfa, states, _) = build_test_data();
+        let (nfa, states) = build_test_data();
         assert_eq!(
-            nfa.epsilon_closure(&[states[0]].into()),
-            [states[0], states[1]].into()
+            nfa.epsilon_closure(&vec![states[0]].iter().collect()),
+            vec![states[0], states[1]].iter().collect(),
         )
     }
 
     #[test]
     fn test_nfa_move_by_symbol() {
-        let (nfa, states, symbols) = build_test_data();
+        let (nfa, states) = build_test_data();
         assert_eq!(
-            nfa.move_by_symbol(&[states[0]].into(), symbols[0]),
-            [states[1], states[2]].into()
+            nfa.move_by_symbol(&vec![states[0]].iter().collect(), Symbol::Symbol0.handle()),
+            vec![states[1], states[2]].iter().collect()
         )
     }
 }
