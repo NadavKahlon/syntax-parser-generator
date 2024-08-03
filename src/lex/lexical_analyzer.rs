@@ -75,31 +75,36 @@ where
         let mut is_string_empty = true;
 
         loop {
-            if current_state.is_none() || !reader.is_available() {
-                return if is_string_empty {
-                    LexemeIdentificationResult::InputExhausted
-                } else if let Some(lexeme_type) = recent_lexeme_type {
-                    LexemeIdentificationResult::Identified(lexeme_type)
-                } else {
-                    // We read some data, but couldn't identify available prefix
-                    LexemeIdentificationResult::LexicalError
-                };
-            }
+            match current_state {
+                None => break,
 
-            let actual_current_state = current_state.expect(
-                "Current state should not be None, as it was just checked"
-            );
-            if let Some(lexeme_type) = self.dfa.get_label(actual_current_state) {
-                recent_lexeme_type = Some(lexeme_type.clone());
-                reader.set_tail();
-            }
+                Some(state) => {
+                    if let Some(lexeme_type) = self.dfa.get_label(state) {
+                        recent_lexeme_type = Some(lexeme_type.clone());
+                        reader.set_tail();
+                    }
 
-            let next_byte = reader.read_next().expect(
-                "Reader should not have been exhausted, since we just checked its availability"
-            );
-            current_state = self.dfa.step(actual_current_state, next_byte.handle());
-            is_string_empty = false;
+                    match reader.read_next() {
+                        None => {
+                            break;
+                        }
+                        Some(next_byte) => {
+                            current_state = self.dfa.step(state, next_byte.handle());
+                            is_string_empty = false;
+                        }
+                    }
+                }
+            }
         }
+
+        return if is_string_empty {
+            LexemeIdentificationResult::InputExhausted
+        } else if let Some(lexeme_type) = recent_lexeme_type {
+            LexemeIdentificationResult::Identified(lexeme_type)
+        } else {
+            // We read some data, but couldn't identify available prefix
+            LexemeIdentificationResult::LexicalError
+        };
     }
 
     pub(super) fn collect_next_lexeme(&self, reader: &mut impl Reader<u8>)
