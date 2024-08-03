@@ -4,4 +4,4 @@ mod automata;
 mod lex;
 mod reader;
 mod handle;
-mod parser;
+mod parsing;

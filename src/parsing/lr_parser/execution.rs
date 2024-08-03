@@ -1,20 +1,19 @@
 use crate::handle::{Handle, Handled};
-use crate::parser::{LrParser, LrParserAction, LrParserState};
-use crate::parser::LrParserAction::Accept;
+use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
 
 #[derive(Debug)]
-pub enum LrParserDecision<ProductionRule>
+pub enum LrParserDecision<Tag>
 where
-    ProductionRule: Handled,
+    Tag: Handled,
 {
     Shift,
-    Reduce(Handle<ProductionRule>),
+    Reduce(Handle<Tag>),
     Accept,
 }
 
-impl<ProductionRule> PartialEq<Self> for LrParserDecision<ProductionRule>
+impl<Tag> PartialEq<Self> for LrParserDecision<Tag>
 where
-    ProductionRule: Handled,
+    Tag: Handled,
 {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -29,25 +28,25 @@ where
     }
 }
 
-pub struct LrParserExecution<'a, Terminal, Nonterminal, ProductionRule>
+pub struct LrParserExecution<'a, Terminal, Nonterminal, Tag>
 where
     Nonterminal: Handled,
     Terminal: Handled,
-    ProductionRule: Handled,
+    Tag: Handled,
 {
-    machine: &'a LrParser<Terminal, Nonterminal, ProductionRule>,
-    stack: Vec<Handle<LrParserState<Terminal, Nonterminal, ProductionRule>>>,
+    machine: &'a LrParser<Terminal, Nonterminal, Tag>,
+    stack: Vec<Handle<LrParserState<Terminal, Nonterminal, Tag>>>,
 }
 
-impl<'a, Terminal, Nonterminal, ProductionRule>
-LrParserExecution<'a, Terminal, Nonterminal, ProductionRule>
+impl<'a, Terminal, Nonterminal, Tag>
+LrParserExecution<'a, Terminal, Nonterminal, Tag>
 where
     Nonterminal: Handled,
     Terminal: Handled,
-    ProductionRule: Handled,
+    Tag: Handled,
 {
-    pub(super) fn new(machine: &'a LrParser<Terminal, Nonterminal, ProductionRule>)
-                      -> LrParserExecution<Terminal, Nonterminal, ProductionRule>
+    pub(super) fn new(machine: &'a LrParser<Terminal, Nonterminal, Tag>)
+                      -> LrParserExecution<Terminal, Nonterminal, Tag>
     {
         let initial_state = machine.initial_state.expect(
             "Cannot create an execution environment for an LrParser with no dedicated initial \
@@ -59,7 +58,7 @@ where
         }
     }
 
-    pub fn decide(&mut self, terminal: Handle<Terminal>) -> Option<LrParserDecision<ProductionRule>> {
+    pub fn decide(&mut self, terminal: Handle<Terminal>) -> Option<LrParserDecision<Tag>> {
         match self.machine.states[*self.stack.last()?].action_map.get(terminal)? {
             LrParserAction::Shift(state) => {
                 self.stack.push(*state);
@@ -69,17 +68,17 @@ where
             LrParserAction::Reduce {
                 size,
                 nonterminal,
-                production
+                tag
             } => {
                 self.stack.truncate(self.stack.len() - size);
                 let current_last_state = &self.machine.states[*self.stack.last()?];
                 let new_state =
                     current_last_state.goto_map.get(*nonterminal)?;
                 self.stack.push(*new_state);
-                Some(LrParserDecision::Reduce(*production))
+                Some(LrParserDecision::Reduce(*tag))
             }
 
-            Accept => Some(LrParserDecision::Accept)
+            LrParserAction::Accept => Some(LrParserDecision::Accept)
         }
     }
 }
@@ -87,8 +86,9 @@ where
 #[cfg(test)]
 mod tests {
     use crate::handle::auto::AutomaticallyHandled;
-    use crate::parser::execution::tests::Production::{Sum, EIsT, Mult, TIsF, Paren, FIsId};
-    use crate::parser::LrParserAction::{Reduce, Shift};
+    use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
+    use crate::parsing::lr_parser::execution::tests::Production::{EIsT, FIsId, Mult, Paren, Sum, TIsF};
+    use crate::parsing::lr_parser::LrParserAction::{Accept, Reduce, Shift};
     use super::*;
 
     #[derive(Copy, Clone)]
@@ -127,12 +127,12 @@ mod tests {
             = (0..12).map(|_| parser.new_state()).collect();
 
         let reductions: Vec<LrParserAction<Terminal, Nonterminal, Production>> = vec![
-            Reduce { size: 3, nonterminal: Nonterminal::E.handle(), production: Sum.handle() },
-            Reduce { size: 1, nonterminal: Nonterminal::E.handle(), production: EIsT.handle() },
-            Reduce { size: 3, nonterminal: Nonterminal::T.handle(), production: Mult.handle() },
-            Reduce { size: 1, nonterminal: Nonterminal::T.handle(), production: TIsF.handle() },
-            Reduce { size: 3, nonterminal: Nonterminal::F.handle(), production: Paren.handle() },
-            Reduce { size: 1, nonterminal: Nonterminal::F.handle(), production: FIsId.handle() },
+            Reduce { size: 3, nonterminal: Nonterminal::E.handle(), tag: Sum.handle() },
+            Reduce { size: 1, nonterminal: Nonterminal::E.handle(), tag: EIsT.handle() },
+            Reduce { size: 3, nonterminal: Nonterminal::T.handle(), tag: Mult.handle() },
+            Reduce { size: 1, nonterminal: Nonterminal::T.handle(), tag: TIsF.handle() },
+            Reduce { size: 3, nonterminal: Nonterminal::F.handle(), tag: Paren.handle() },
+            Reduce { size: 1, nonterminal: Nonterminal::F.handle(), tag: FIsId.handle() },
         ];
 
         parser.set_action(states[0], Terminal::Id.handle(), Shift(states[5]));
