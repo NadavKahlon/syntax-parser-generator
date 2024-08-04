@@ -7,7 +7,10 @@ where
     Tag: Handled,
 {
     Shift,
-    Reduce(Handle<Tag>),
+    Reduce {
+        size: usize,
+        tag: Handle<Tag>,
+    },
     Accept,
 }
 
@@ -20,9 +23,9 @@ where
             (LrParserDecision::Shift, LrParserDecision::Shift) => true,
             (LrParserDecision::Accept, LrParserDecision::Accept) => true,
             (
-                LrParserDecision::Reduce(prod1),
-                LrParserDecision::Reduce(prod2)
-            ) => prod1 == prod2,
+                LrParserDecision::Reduce { size: size_1, tag: tag_1 },
+                LrParserDecision::Reduce { size: size_2, tag: tag_2 }
+            ) => (size_1 == size_2) && (tag_1 == tag_2),
             (_, _) => false,
         }
     }
@@ -75,7 +78,7 @@ where
                 let new_state =
                     current_last_state.goto_map.get(*nonterminal)?;
                 self.stack.push(*new_state);
-                Some(LrParserDecision::Reduce(*tag))
+                Some(LrParserDecision::Reduce { size: *size, tag: *tag })
             }
 
             LrParserAction::Accept => Some(LrParserDecision::Accept)
@@ -198,11 +201,11 @@ mod tests {
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce(FIsId.handle())),
+            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce(TIsF.handle())),
+            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
@@ -214,15 +217,15 @@ mod tests {
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce(FIsId.handle())),
+            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce(Mult.handle())),
+            Some(LrParserDecision::Reduce { size: 3, tag: Mult.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce(EIsT.handle())),
+            Some(LrParserDecision::Reduce { size: 1, tag: EIsT.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
@@ -234,15 +237,15 @@ mod tests {
         );
         assert_eq!(
             execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Reduce(FIsId.handle())),
+            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Reduce(TIsF.handle())),
+            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Reduce(Sum.handle())),
+            Some(LrParserDecision::Reduce { size: 3, tag: Sum.handle() }),
         );
         assert_eq!(
             execution.decide(Terminal::Dollar.handle()),

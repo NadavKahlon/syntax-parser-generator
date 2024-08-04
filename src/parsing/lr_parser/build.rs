@@ -10,8 +10,9 @@ where
     Nonterminal: Handled,
     Tag: OrderlyHandled,
 {
-    bindings: HandledVec<Binding>,
+    bindings: HandledVec<Binding<Terminal>>,
     rules: Vec<ProductionRule<Terminal, Nonterminal, Tag>>,
+    start_nonterminal: Option<Handle<Nonterminal>>,
 }
 
 impl<Terminal, Nonterminal, Tag> LrParserBuilder<Terminal, Nonterminal, Tag>
@@ -24,21 +25,29 @@ where
         Self {
             bindings: HandledVec::new(),
             rules: Vec::new(),
+            start_nonterminal: None,
         }
     }
 
-    pub fn register_binding(&mut self, associativity: Associativity) -> Handle<Binding> {
-        self.bindings.insert(Binding::new(associativity))
+    pub fn register_binding(
+        &mut self, terminals: Vec<Handle<Terminal>>, associativity: Associativity,
+    ) -> Handle<Binding<Terminal>>
+    {
+        self.bindings.insert(Binding::new(terminals, associativity))
     }
 
     pub fn register_rule(
         &mut self,
         lhs: Handle<Nonterminal>,
         rhs: Vec<Symbol<Terminal, Nonterminal>>,
-        binding: Option<Handle<Binding>>,
+        binding: Option<Handle<Binding<Terminal>>>,
         tag: Handle<Tag>,
     ) {
         self.rules.push(ProductionRule::new(lhs, rhs, tag, binding))
+    }
+
+    pub fn set_start_nonterminal(&mut self, nonterminal: Handle<Nonterminal>) {
+        self.start_nonterminal = Some(nonterminal);
     }
 
     pub fn build(self) -> LrParser<Terminal, Nonterminal, Tag>

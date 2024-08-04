@@ -2,28 +2,26 @@ use crate::handle::{Handle, Handled};
 use crate::handle::handled_vec::HandledVec;
 use crate::parsing::lr_parser::build::LrParserBuilder;
 use crate::parsing::lr_parser::rules::{Associativity, Binding, Symbol};
-use crate::parsing::translator::reduction_handler::ReductionHandler;
+use crate::parsing::translator::atomic_translator::AtomicTranslator;
 use crate::parsing::translator::SyntaxDirectedTranslator;
 
-pub struct SyntaxDirectedTranslatorBuilder<Terminal, Satellite, F>
+pub struct SyntaxDirectedTranslatorBuilder<Terminal, Satellite>
 where
     Terminal: Handled,
-    F: Fn(Vec<&Satellite>) -> Satellite,
 {
     nonterminals: HandledVec<Nonterminal>,
-    reduction_handlers: HandledVec<ReductionHandler<Satellite, F>>,
-    lr_parser_builder: LrParserBuilder<Terminal, Nonterminal, ReductionHandler<Satellite, F>>,
+    atomic_translators: HandledVec<AtomicTranslator<Satellite>>,
+    lr_parser_builder: LrParserBuilder<Terminal, Nonterminal, AtomicTranslator<Satellite>>,
 }
 
-impl<Terminal, Satellite, F> SyntaxDirectedTranslatorBuilder<Terminal, Satellite, F>
+impl<Terminal, Satellite> SyntaxDirectedTranslatorBuilder<Terminal, Satellite>
 where
     Terminal: Handled,
-    F: Fn(Vec<&Satellite>) -> Satellite,
 {
     pub fn new() -> Self {
         Self {
             nonterminals: HandledVec::new(),
-            reduction_handlers: HandledVec::new(),
+            atomic_translators: HandledVec::new(),
             lr_parser_builder: LrParserBuilder::new(),
         }
     }
@@ -32,27 +30,38 @@ where
         self.nonterminals.insert(Nonterminal)
     }
 
-    pub fn register_binding(&mut self, associativity: Associativity) -> Handle<Binding> {
-        self.lr_parser_builder.register_binding(associativity)
+    pub fn register_binding(
+        &mut self, terminals: Vec<Handle<Terminal>>, associativity: Associativity
+    ) -> Handle<Binding<Terminal>>
+    {
+        self.lr_parser_builder.register_binding(terminals, associativity)
     }
 
     pub fn register_rule(
         &mut self,
         lhs: Handle<Nonterminal>,
         rhs: Vec<Symbol<Terminal, Nonterminal>>,
-        binding: Option<Handle<Binding>>,
-        handler: F,
+        binding: Option<Handle<Binding<Terminal>>>,
+        handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
     ) {
         let tag =
-            self.reduction_handlers.insert(ReductionHandler::new(handler));
+            self.atomic_translators.insert(AtomicTranslator::new(handler));
         self.lr_parser_builder.register_rule(lhs, rhs, binding, tag);
     }
 
-    pub fn build(self) -> SyntaxDirectedTranslator<Terminal, Satellite, F> {
-        let Self { reduction_handlers, lr_parser_builder, ..} = self;
+    pub fn set_start_nonterminal(&mut self, nonterminal: Handle<Nonterminal>) {
+        self.lr_parser_builder.set_start_nonterminal(nonterminal)
+    }
+
+    pub fn build(self) -> SyntaxDirectedTranslator<Terminal, Satellite> {
+        let Self {
+            atomic_translators,
+            lr_parser_builder,
+            ..
+        } = self;
         SyntaxDirectedTranslator {
             lr_parser: lr_parser_builder.build(),
-            reduction_handlers,
+            atomic_translators,
         }
     }
 }
@@ -60,4 +69,3 @@ where
 // Blank, don't really need to carry any info, Handle API is only used for counting registrations
 pub struct Nonterminal;
 impl Handled for Nonterminal { type HandleCoreType = u8; }
-

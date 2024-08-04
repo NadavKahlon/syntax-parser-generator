@@ -10,7 +10,7 @@ where
     lhs: Handle<Nonterminal>,
     rhs: Vec<Symbol<Terminal, Nonterminal>>,
     tag: Handle<Tag>,
-    binding: Option<Handle<Binding>>,
+    binding: Option<Handle<Binding<Terminal>>>,
 }
 
 impl<Terminal, Nonterminal, Tag> ProductionRule<Terminal, Nonterminal, Tag>
@@ -21,7 +21,7 @@ where
 {
     pub fn new(
         lhs: Handle<Nonterminal>, rhs: Vec<Symbol<Terminal, Nonterminal>>, tag: Handle<Tag>,
-        binding: Option<Handle<Binding>>,
+        binding: Option<Handle<Binding<Terminal>>>,
     ) -> Self {
         Self { lhs, rhs, tag, binding }
     }
@@ -38,15 +38,19 @@ pub enum Associativity {
     None,
 }
 
-pub struct Binding {
+pub struct Binding<Terminal: Handled> {
+    terminals: Vec<Handle<Terminal>>,
     associativity: Associativity,
 }
 
-impl Binding {
-    pub fn new(associativity: Associativity) -> Self {
-        Self { associativity }
+impl<Terminal> Binding<Terminal>
+where
+    Terminal: Handled,
+{
+    pub fn new(terminals: Vec<Handle<Terminal>>, associativity: Associativity) -> Self {
+        Self { terminals, associativity }
     }
 }
 
-impl Handled for Binding { type HandleCoreType = u8; }
-impl OrderlyHandled for Binding {}
+impl<Terminal: Handled> Handled for Binding<Terminal> { type HandleCoreType = u8; }
+impl<Terminal: Handled> OrderlyHandled for Binding<Terminal> {}
