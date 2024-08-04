@@ -87,7 +87,7 @@ where
 mod tests {
     use crate::handle::auto::AutomaticallyHandled;
     use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
-    use crate::parsing::lr_parser::execution::tests::Production::{EIsT, FIsId, Mult, Paren, Sum, TIsF};
+    use crate::parsing::lr_parser::execute::tests::Production::{EIsT, FIsId, Mult, Paren, Sum, TIsF};
     use crate::parsing::lr_parser::LrParserAction::{Accept, Reduce, Shift};
     use super::*;
 

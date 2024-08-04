@@ -1,9 +1,11 @@
-pub mod execution;
+pub mod execute;
+pub mod build;
+pub mod rules;
 
 use crate::handle::{Handle, Handled};
 use crate::handle::handle_map::HandleMap;
 use crate::handle::handled_vec::HandledVec;
-use crate::parsing::lr_parser::execution::LrParserExecution;
+use crate::parsing::lr_parser::execute::LrParserExecution;
 
 #[derive(Clone, Copy)]
 enum LrParserAction<Terminal, Nonterminal, Tag>
