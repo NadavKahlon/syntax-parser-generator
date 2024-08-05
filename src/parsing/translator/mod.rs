@@ -26,35 +26,47 @@ where
     {
         let mut satellite_stack: Vec<Satellite> = Vec::new();
         let mut lr_parser_execution = self.lr_parser.new_execution();
+        let mut next_input_pair: Option<(Handle<Terminal>, Satellite)> = None;
 
-        let (mut terminal, mut satellite) = stream.next()?;
         loop {
-            match lr_parser_execution.decide(terminal)? {
-                LrParserDecision::Shift => {
-                    satellite_stack.push(satellite);
-                    (terminal, satellite) = stream.next()?;
+            next_input_pair = match next_input_pair {
+                None => {
+                    match stream.next() {
+                        None => break,
+                        Some(input_pair) => Some(input_pair),
+                    }
                 }
 
-                LrParserDecision::Reduce { size, tag } => {
-                    if satellite_stack.len() >= size {
-                        // Satellite stack is too short for rule
-                        return None;
-                    }
-                    let rhs_satellites = satellite_stack
-                        .drain((satellite_stack.len() - size)..).collect();
-                    let lhs_satellite =
-                        self.atomic_translators[tag].translate(rhs_satellites);
-                    satellite_stack.push(lhs_satellite);
-                }
+                Some((terminal, satellite)) => {
+                    match lr_parser_execution.decide(terminal)? {
+                        LrParserDecision::Shift => {
+                            satellite_stack.push(satellite);
+                            None
+                        },
+                        LrParserDecision::Reduce { size, tag } => {
+                            if satellite_stack.len() < size {
+                                // Satellite stack is too short for rule
+                                return None;
+                            }
+                            let rhs_satellites = satellite_stack
+                                .drain((satellite_stack.len() - size)..).collect();
+                            let lhs_satellite =
+                                self.atomic_translators[tag].translate(rhs_satellites);
+                            satellite_stack.push(lhs_satellite);
 
-                LrParserDecision::Accept => {
-                    if satellite_stack.len() != 1 {
-                        // Satellite stack size should be 1 upon input acceptance
-                        return None;
+                            // Do not reset next_input_pair as Reduce does not consume input
+                            Some((terminal, satellite))
+                        }
                     }
-                    return satellite_stack.pop();
                 }
             }
+        }
+
+        // We reach here on input exhaustion
+        if (satellite_stack.len() == 1) && lr_parser_execution.finalize() {
+            satellite_stack.pop()
+        } else {
+            None
         }
     }
 }

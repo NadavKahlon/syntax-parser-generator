@@ -11,7 +11,6 @@ where
         size: usize,
         tag: Handle<Tag>,
     },
-    Accept,
 }
 
 impl<Tag> PartialEq<Self> for LrParserDecision<Tag>
@@ -21,7 +20,6 @@ where
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (LrParserDecision::Shift, LrParserDecision::Shift) => true,
-            (LrParserDecision::Accept, LrParserDecision::Accept) => true,
             (
                 LrParserDecision::Reduce { size: size_1, tag: tag_1 },
                 LrParserDecision::Reduce { size: size_2, tag: tag_2 }
@@ -68,10 +66,35 @@ where
     }
 
     pub fn decide(&mut self, terminal: Handle<Terminal>) -> Option<LrParserDecision<Tag>> {
+        match self.decide_internal(terminal)? {
+            LrParserInternalDecision::Continue(decision) => Some(decision),
+            LrParserInternalDecision::Accept => {
+                panic!(
+                    "LR parser should not have decided to accept on client's input, as it should \
+                    only accept on the end-of-marker terminal (mock handle) only known internally \
+                    to the parser"
+                )
+            }
+        }
+    }
+
+    pub fn finalize(&mut self) -> bool {
+        loop {
+            match self.decide_internal(self.end_of_input_marker) {
+                None => return false,
+                Some(LrParserInternalDecision::<Tag>::Accept) => return true,
+                _ => {}
+            }
+        }
+    }
+
+    fn decide_internal(&mut self, terminal: Handle<Terminal>)
+                       -> Option<LrParserInternalDecision<Tag>>
+    {
         match self.machine.states[*self.stack.last()?].action_map.get(terminal)? {
             LrParserAction::Shift(state) => {
                 self.stack.push(*state);
-                Some(LrParserDecision::Shift)
+                Some(LrParserInternalDecision::Continue(LrParserDecision::Shift))
             }
 
             LrParserAction::Reduce {
@@ -84,22 +107,22 @@ where
                 let new_state =
                     current_last_state.goto_map.get(*nonterminal)?;
                 self.stack.push(*new_state);
-                Some(LrParserDecision::Reduce { size: *size, tag: *tag })
+                Some(LrParserInternalDecision::Continue(
+                    LrParserDecision::Reduce { size: *size, tag: *tag }
+                ))
             }
 
-            LrParserAction::Accept => Some(LrParserDecision::Accept)
+            LrParserAction::Accept => Some(LrParserInternalDecision::Accept),
         }
     }
+}
 
-    pub fn finalize(mut self) -> bool {
-        loop {
-            match self.decide(self.end_of_input_marker) {
-                None => return false,
-                Some(LrParserDecision::Accept) => return true,
-                _ => {}
-            }
-        }
-    }
+pub enum LrParserInternalDecision<Tag>
+where
+    Tag: Handled,
+{
+    Continue(LrParserDecision<Tag>),
+    Accept,
 }
 
 #[cfg(test)]
@@ -208,74 +231,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expressions_parser() {
-        let parser = create_parser();
-        let mut execution = parser.new_execution();
-
-        assert_eq!(
-            execution.decide(Terminal::Id.handle()),
-            Some(LrParserDecision::Shift)
-        );
-        assert_eq!(
-            execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Shift),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Id.handle()),
-            Some(LrParserDecision::Shift),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce { size: 3, tag: Mult.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: EIsT.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Shift),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Id.handle()),
-            Some(LrParserDecision::Shift),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Reduce { size: 3, tag: Sum.handle() }),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Accept),
-        );
-        assert_eq!(
-            execution.decide(Terminal::Dollar.handle()),
-            Some(LrParserDecision::Accept),
-        );
-    }
-
-    #[test]
-    fn test_finalize_true() {
+    fn test_successful() {
         let parser = create_parser();
         let mut execution = parser.new_execution();
 
@@ -323,7 +279,7 @@ mod tests {
     }
 
     #[test]
-    fn test_finalize_false() {
+    fn test_failing() {
         let parser = create_parser();
         let mut execution = parser.new_execution();
 
