@@ -11,7 +11,7 @@ where
     Tag: OrderlyHandled,
 {
     bindings: HandledVec<Binding<Terminal>>,
-    rules: Vec<ProductionRule<Terminal, Nonterminal, Tag>>,
+    rules: HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
     start_nonterminal: Option<Handle<Nonterminal>>,
 }
 
@@ -24,7 +24,7 @@ where
     pub fn new() -> Self {
         Self {
             bindings: HandledVec::new(),
-            rules: Vec::new(),
+            rules: HandledVec::new(),
             start_nonterminal: None,
         }
     }
@@ -43,7 +43,7 @@ where
         binding: Option<Handle<Binding<Terminal>>>,
         tag: Handle<Tag>,
     ) {
-        self.rules.push(ProductionRule::new(lhs, rhs, tag, binding))
+        self.rules.insert(ProductionRule::new(lhs, rhs, tag, binding));
     }
 
     pub fn set_start_nonterminal(&mut self, nonterminal: Handle<Nonterminal>) {
@@ -54,4 +54,58 @@ where
     {
         todo!()
     }
+}
+
+struct Item<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: OrderlyHandled,
+{
+    rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
+    dot: usize,
+}
+
+struct KernelItemsSet<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: OrderlyHandled,
+{
+    entries: HandledVec<KernelItemsSetEntry<Terminal, Nonterminal, Tag>>,
+}
+
+impl<Terminal, Nonterminal, Tag> Handled for KernelItemsSet<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: OrderlyHandled,
+{
+    type HandleCoreType = u16;
+}
+
+
+struct KernelItemsSetEntry<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: OrderlyHandled,
+{
+    item: Item<Terminal, Nonterminal, Tag>,
+    lookaheads: Vec<Handle<Terminal>>,
+    propagations:
+        Vec<(
+            Handle<KernelItemsSet<Terminal, Nonterminal, Tag>>,
+            Handle<KernelItemsSetEntry<Terminal, Nonterminal, Tag>>,
+            Handle<Terminal>,
+        )>,
+}
+
+impl<Terminal, Nonterminal, Tag> Handled for KernelItemsSetEntry<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: OrderlyHandled,
+{
+    type HandleCoreType = u16;
 }

@@ -27,6 +27,15 @@ where
     }
 }
 
+impl<Terminal, Nonterminal, Tag> Handled for ProductionRule<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: Handled,
+{
+    type HandleCoreType = Tag::HandleCoreType;
+}
+
 pub enum Symbol<Terminal: Handled, Nonterminal: Handled> {
     Terminal(Handle<Terminal>),
     Nonterminal(Handle<Nonterminal>),
