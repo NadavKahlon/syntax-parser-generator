@@ -67,6 +67,7 @@ where
 {
     states: HandledVec<LrParserState<Terminal, Nonterminal, Tag>>,
     initial_state: Option<Handle<LrParserState<Terminal, Nonterminal, Tag>>>,
+    end_of_input_marker: Option<Handle<Terminal>>,
 }
 
 impl<Terminal, Nonterminal, Tag> LrParser<Terminal, Nonterminal, Tag>
@@ -79,6 +80,7 @@ where
         Self {
             states: HandledVec::new(),
             initial_state: None,
+            end_of_input_marker: None,
         }
     }
 
@@ -105,9 +107,13 @@ where
         LrParserExecution::new(self)
     }
 
-    fn dedicate_initial_state(
+    fn set_initial_state(
         &mut self, state: Handle<LrParserState<Terminal, Nonterminal, Tag>>
     ) {
         self.initial_state = Some(state)
+    }
+
+    fn set_end_of_input_marker(&mut self, terminal: Handle<Terminal>) {
+        self.end_of_input_marker = Some(terminal)
     }
 }

@@ -39,6 +39,7 @@ where
 {
     machine: &'a LrParser<Terminal, Nonterminal, Tag>,
     stack: Vec<Handle<LrParserState<Terminal, Nonterminal, Tag>>>,
+    end_of_input_marker: Handle<Terminal>,
 }
 
 impl<'a, Terminal, Nonterminal, Tag>
@@ -55,9 +56,14 @@ where
             "Cannot create an execution environment for an LrParser with no dedicated initial \
             state"
         );
+        let end_of_input_marker = machine.end_of_input_marker.expect(
+            "Cannot create an execution environment for an LrParser with no dedicated end-of-\
+            input terminal symbol"
+        );
         Self {
             machine,
             stack: vec![initial_state],
+            end_of_input_marker,
         }
     }
 
@@ -82,6 +88,16 @@ where
             }
 
             LrParserAction::Accept => Some(LrParserDecision::Accept)
+        }
+    }
+
+    pub fn finalize(mut self) -> bool {
+        loop {
+            match self.decide(self.end_of_input_marker) {
+                None => return false,
+                Some(LrParserDecision::Accept) => return true,
+                _ => {}
+            }
         }
     }
 }
@@ -185,7 +201,8 @@ mod tests {
         parser.set_goto(states[6], Nonterminal::F.handle(), states[3]);
         parser.set_goto(states[7], Nonterminal::F.handle(), states[10]);
 
-        parser.dedicate_initial_state(states[0]);
+        parser.set_initial_state(states[0]);
+        parser.set_end_of_input_marker(Terminal::Dollar.handle());
 
         parser
     }
@@ -255,5 +272,77 @@ mod tests {
             execution.decide(Terminal::Dollar.handle()),
             Some(LrParserDecision::Accept),
         );
+    }
+
+    #[test]
+    fn test_finalize_true() {
+        let parser = create_parser();
+        let mut execution = parser.new_execution();
+
+        assert_eq!(
+            execution.decide(Terminal::Id.handle()),
+            Some(LrParserDecision::Shift)
+        );
+        assert_eq!(
+            execution.decide(Terminal::Star.handle()),
+            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Star.handle()),
+            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Star.handle()),
+            Some(LrParserDecision::Shift),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Id.handle()),
+            Some(LrParserDecision::Shift),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Plus.handle()),
+            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Plus.handle()),
+            Some(LrParserDecision::Reduce { size: 3, tag: Mult.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Plus.handle()),
+            Some(LrParserDecision::Reduce { size: 1, tag: EIsT.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Plus.handle()),
+            Some(LrParserDecision::Shift),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Id.handle()),
+            Some(LrParserDecision::Shift),
+        );
+        assert_eq!(execution.finalize(), true);
+    }
+
+    #[test]
+    fn test_finalize_false() {
+        let parser = create_parser();
+        let mut execution = parser.new_execution();
+
+        assert_eq!(
+            execution.decide(Terminal::Id.handle()),
+            Some(LrParserDecision::Shift)
+        );
+        assert_eq!(
+            execution.decide(Terminal::Star.handle()),
+            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Star.handle()),
+            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
+        );
+        assert_eq!(
+            execution.decide(Terminal::Star.handle()),
+            Some(LrParserDecision::Shift),
+        );
+        assert_eq!(execution.finalize(), false);
     }
 }
