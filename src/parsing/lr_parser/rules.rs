@@ -7,9 +7,9 @@ where
     Nonterminal: Handled,
     Tag: Handled,
 {
-    lhs: Handle<Nonterminal>,
-    rhs: Vec<Symbol<Terminal, Nonterminal>>,
-    tag: Handle<Tag>,
+    pub(super) lhs: Handle<Nonterminal>,
+    pub(super) rhs: Vec<Symbol<Terminal, Nonterminal>>,
+    pub(super) tag: Handle<Tag>,
     binding: Option<Handle<Binding<Terminal>>>,
 }
 
@@ -48,7 +48,7 @@ pub enum Associativity {
 }
 
 pub struct Binding<Terminal: Handled> {
-    terminals: Vec<Handle<Terminal>>,
+    pub(super) terminals: Vec<Handle<Terminal>>,
     associativity: Associativity,
 }
 

@@ -1,6 +1,11 @@
+mod items;
+mod internal;
+
+use std::collections::HashSet;
 use crate::handle::{Handle, Handled};
 use crate::handle::handled_vec::HandledVec;
 use crate::handle::order::OrderlyHandled;
+use crate::parsing::lr_parser::build::internal::InternalLrParserBuilder;
 use crate::parsing::lr_parser::LrParser;
 use crate::parsing::lr_parser::rules::{Associativity, Binding, ProductionRule, Symbol};
 
@@ -50,62 +55,70 @@ where
         self.start_nonterminal = Some(nonterminal);
     }
 
-    pub fn build(self) -> LrParser<Terminal, Nonterminal, Tag>
-    {
-        todo!()
+    fn list_known_handles(&self) -> (
+        Vec<Handle<Terminal>>, Vec<Handle<Nonterminal>>, Vec<Handle<Tag>>
+    ) {
+        let mut terminals: HashSet<Handle<Terminal>> = HashSet::new();
+        let mut nonterminals: HashSet<Handle<Nonterminal>> = HashSet::new();
+        let mut tags: HashSet<Handle<Tag>> = HashSet::new();
+
+        for binding in &self.bindings {
+            terminals.extend(&binding.terminals);
+        }
+
+        for rule in &self.rules {
+            nonterminals.insert(rule.lhs);
+            for symbol in &rule.rhs {
+                match symbol {
+                    Symbol::Terminal(terminal) => {
+                        terminals.insert(*terminal);
+                    },
+                    Symbol::Nonterminal(nonterminal) => {
+                        nonterminals.insert(*nonterminal);
+                    }
+                }
+            }
+            tags.insert(rule.tag);
+        }
+
+        if let Some(start_nonterminal) = self.start_nonterminal {
+            nonterminals.insert(start_nonterminal);
+        }
+
+        (terminals.into_iter().collect(), nonterminals.into_iter().collect(), tags.into_iter().collect())
     }
-}
 
-struct Item<Terminal, Nonterminal, Tag>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-    Tag: OrderlyHandled,
-{
-    rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
-    dot: usize,
-}
+    pub fn build(mut self) -> LrParser<Terminal, Nonterminal, Tag> {
+        let (
+            mut terminals,
+            mut nonterminals,
+            mut tags
+        ) = self.list_known_handles();
 
-struct KernelItemsSet<Terminal, Nonterminal, Tag>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-    Tag: OrderlyHandled,
-{
-    entries: HandledVec<KernelItemsSetEntry<Terminal, Nonterminal, Tag>>,
-}
+        let actual_start_nonterminal = Handle::mock(&nonterminals);
+        let end_of_input_marker = Handle::mock(&terminals);
+        let start_rule_tag = Handle::mock(&tags);
+        nonterminals.push(actual_start_nonterminal);
+        terminals.push(end_of_input_marker);
+        tags.push(start_rule_tag);
 
-impl<Terminal, Nonterminal, Tag> Handled for KernelItemsSet<Terminal, Nonterminal, Tag>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-    Tag: OrderlyHandled,
-{
-    type HandleCoreType = u16;
-}
+        let specified_start_nonterminal = self.start_nonterminal.expect(
+            "Cannot build an LR-parser when no start-nonterminal was specified"
+        );
+        let start_rule = self.rules.insert(ProductionRule::new(
+            actual_start_nonterminal,
+            vec![Symbol::Nonterminal(specified_start_nonterminal)],
+            start_rule_tag,
+            None,
+        ));
 
-
-struct KernelItemsSetEntry<Terminal, Nonterminal, Tag>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-    Tag: OrderlyHandled,
-{
-    item: Item<Terminal, Nonterminal, Tag>,
-    lookaheads: Vec<Handle<Terminal>>,
-    propagations:
-        Vec<(
-            Handle<KernelItemsSet<Terminal, Nonterminal, Tag>>,
-            Handle<KernelItemsSetEntry<Terminal, Nonterminal, Tag>>,
-            Handle<Terminal>,
-        )>,
-}
-
-impl<Terminal, Nonterminal, Tag> Handled for KernelItemsSetEntry<Terminal, Nonterminal, Tag>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-    Tag: OrderlyHandled,
-{
-    type HandleCoreType = u16;
+        InternalLrParserBuilder::new(
+            terminals,
+            nonterminals,
+            self.rules,
+            start_rule,
+            end_of_input_marker,
+            self.bindings,
+        ).build()
+    }
 }

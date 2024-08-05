@@ -5,7 +5,7 @@ where
     T: Handled,
 {
     // Create a handle to "nothing", different from all other handles in the given set
-    pub fn mock(existing_handles: Vec<Handle<T>>) -> Handle<T> {
+    pub fn mock(existing_handles: &Vec<Handle<T>>) -> Handle<T> {
         let existing_indices: std::collections::HashSet<usize> = existing_handles
             .iter()
             .map(|handle| handle.index())
