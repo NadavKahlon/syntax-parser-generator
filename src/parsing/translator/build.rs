@@ -1,7 +1,7 @@
 use crate::handle::{Handle, Handled};
 use crate::handle::handled_vec::HandledVec;
 use crate::parsing::lr_parser::build::LrParserBuilder;
-use crate::parsing::lr_parser::rules::{Associativity, Binding, Symbol};
+use crate::parsing::lr_parser::rules::{Associativity, Binding, GrammarSymbol};
 use crate::parsing::translator::atomic_translator::AtomicTranslator;
 use crate::parsing::translator::SyntaxDirectedTranslator;
 
@@ -40,7 +40,7 @@ where
     pub fn register_rule(
         &mut self,
         lhs: Handle<Nonterminal>,
-        rhs: Vec<Symbol<Terminal, Nonterminal>>,
+        rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
         binding: Option<Handle<Binding<Terminal>>>,
         handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
     ) {

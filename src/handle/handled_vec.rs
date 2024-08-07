@@ -61,3 +61,16 @@ where
         self.contents.iter()
     }
 }
+
+impl<'a, T> FromIterator<T> for HandledVec<T>
+where
+    T: Handled,
+{
+    fn from_iter<U: IntoIterator<Item=T>>(iter: U) -> Self {
+        let mut result = Self::new();
+        for item in iter {
+            result.insert(item);
+        }
+        result
+    }
+}

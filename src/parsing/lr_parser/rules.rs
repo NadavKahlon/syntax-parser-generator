@@ -8,7 +8,7 @@ where
     Tag: Handled,
 {
     pub(super) lhs: Handle<Nonterminal>,
-    pub(super) rhs: Vec<Symbol<Terminal, Nonterminal>>,
+    pub(super) rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
     pub(super) tag: Handle<Tag>,
     binding: Option<Handle<Binding<Terminal>>>,
 }
@@ -20,7 +20,7 @@ where
     Tag: Handled,
 {
     pub fn new(
-        lhs: Handle<Nonterminal>, rhs: Vec<Symbol<Terminal, Nonterminal>>, tag: Handle<Tag>,
+        lhs: Handle<Nonterminal>, rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>, tag: Handle<Tag>,
         binding: Option<Handle<Binding<Terminal>>>,
     ) -> Self {
         Self { lhs, rhs, tag, binding }
@@ -36,9 +36,13 @@ where
     type HandleCoreType = Tag::HandleCoreType;
 }
 
-pub enum Symbol<Terminal: Handled, Nonterminal: Handled> {
+pub enum GrammarSymbol<Terminal: Handled, Nonterminal: Handled> {
     Terminal(Handle<Terminal>),
     Nonterminal(Handle<Nonterminal>),
+}
+
+impl<Terminal: Handled, Nonterminal: Handled> Handled for GrammarSymbol<Terminal, Nonterminal> {
+    type HandleCoreType = u16;
 }
 
 pub enum Associativity {

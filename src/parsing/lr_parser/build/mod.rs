@@ -1,13 +1,14 @@
-mod items;
-mod internal;
+mod grammar_symbols;
+mod kernel_sets_dfa;
 
 use std::collections::HashSet;
 use crate::handle::{Handle, Handled};
 use crate::handle::handled_vec::HandledVec;
 use crate::handle::order::OrderlyHandled;
-use crate::parsing::lr_parser::build::internal::InternalLrParserBuilder;
+use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
+use crate::parsing::lr_parser::build::kernel_sets_dfa::KernelSetsDfa;
 use crate::parsing::lr_parser::LrParser;
-use crate::parsing::lr_parser::rules::{Associativity, Binding, ProductionRule, Symbol};
+use crate::parsing::lr_parser::rules::{Associativity, Binding, ProductionRule, GrammarSymbol};
 
 pub struct LrParserBuilder<Terminal, Nonterminal, Tag>
 where
@@ -44,7 +45,7 @@ where
     pub fn register_rule(
         &mut self,
         lhs: Handle<Nonterminal>,
-        rhs: Vec<Symbol<Terminal, Nonterminal>>,
+        rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
         binding: Option<Handle<Binding<Terminal>>>,
         tag: Handle<Tag>,
     ) {
@@ -70,10 +71,10 @@ where
             nonterminals.insert(rule.lhs);
             for symbol in &rule.rhs {
                 match symbol {
-                    Symbol::Terminal(terminal) => {
+                    GrammarSymbol::Terminal(terminal) => {
                         terminals.insert(*terminal);
                     },
-                    Symbol::Nonterminal(nonterminal) => {
+                    GrammarSymbol::Nonterminal(nonterminal) => {
                         nonterminals.insert(*nonterminal);
                     }
                 }
@@ -102,23 +103,29 @@ where
         terminals.push(end_of_input_marker);
         tags.push(start_rule_tag);
 
+        let grammar_symbols
+            = GrammarSymbolsCollection::new(&terminals, &nonterminals);
+
         let specified_start_nonterminal = self.start_nonterminal.expect(
             "Cannot build an LR-parser when no start-nonterminal was specified"
         );
         let start_rule = self.rules.insert(ProductionRule::new(
             actual_start_nonterminal,
-            vec![Symbol::Nonterminal(specified_start_nonterminal)],
+            vec![GrammarSymbol::Nonterminal(specified_start_nonterminal)],
             start_rule_tag,
             None,
         ));
 
-        InternalLrParserBuilder::new(
-            terminals,
-            nonterminals,
-            self.rules,
-            start_rule,
-            end_of_input_marker,
-            self.bindings,
-        ).build()
+        let kernel_sets_dfa
+            = KernelSetsDfa::build(&self.rules, start_rule, &grammar_symbols);
+
+        todo!()
+
+            // terminals,
+            // nonterminals,
+            // self.rules,
+            // start_rule,
+            // end_of_input_marker,
+            // self.bindings,
     }
 }

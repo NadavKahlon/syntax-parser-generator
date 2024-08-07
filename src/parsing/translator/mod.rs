@@ -75,7 +75,7 @@ where
 mod tests {
     use crate::handle::auto::AutomaticallyHandled;
     use crate::parsing::lr_parser::rules::Associativity::Left;
-    use crate::parsing::lr_parser::rules::Symbol::{Nonterminal, Terminal};
+    use crate::parsing::lr_parser::rules::GrammarSymbol::{Nonterminal, Terminal};
     use crate::parsing::translator::build::SyntaxDirectedTranslatorBuilder;
     use crate::parsing::translator::SyntaxDirectedTranslator;
 
