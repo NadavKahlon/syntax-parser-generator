@@ -3,6 +3,7 @@ mod lookaheads;
 mod compile_to_parser;
 mod firsts;
 
+use std::collections::HashSet;
 use derive_where::derive_where;
 use crate::automata::dfa::{Dfa, DfaState};
 use crate::handle::{Handle, Handled};
@@ -92,7 +93,7 @@ where
     Tag: OrderlyHandled,
 {
     item: Item<Terminal, Nonterminal, Tag>,
-    lookaheads: Vec<Handle<Terminal>>,
+    lookaheads: HashSet<Handle<Terminal>>,
     propagations:
         Vec<(
             Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
@@ -109,7 +110,7 @@ where
     fn new(kernel_item: Item<Terminal, Nonterminal, Tag>) -> Self {
         Self {
             item: kernel_item,
-            lookaheads: Vec::new(),
+            lookaheads: HashSet::new(),
             propagations: Vec::new(),
         }
     }

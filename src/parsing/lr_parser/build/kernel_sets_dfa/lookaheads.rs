@@ -120,7 +120,37 @@ where
     }
 
     fn close_lookahead_propagation(&mut self) {
-        todo!()
+        // TODO optimize: there are many list copied here to circumvent Rust's borrow checking
+        let mut changed = true;
+        while changed {
+            changed = false;
+
+            let states: Vec<Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>> =
+                self.dfa.list_states().collect();
+            for state in states {
+
+                let entries_handles: Vec<Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>> =
+                    self.dfa.kernel_set(state).entries.list_handles().collect();
+                for entry_handle in entries_handles {
+
+                    let entry = &self.dfa.kernel_set(state).entries[entry_handle];
+                    let lookaheads = entry.lookaheads.clone();
+                    let propagations = entry.propagations.clone();
+
+                    for (tar_state, tar_entry) in
+                        propagations
+                    {
+                        for &lookahead in &lookaheads {
+                            changed |= self.dfa
+                                .mut_kernel_set(tar_state)
+                                .entries[tar_entry]
+                                .lookaheads
+                                .insert(lookahead);
+                        };
+                    }
+                }
+            }
+        }
     }
 
     fn lr1_item_closure(&self, src_lr1_item: Lr1Item<Terminal, Nonterminal, Tag>)
@@ -217,7 +247,7 @@ where
                 tar_entry,
                 lookahead
             } => {
-                self.dfa.mut_kernel_set(tar_state).entries[tar_entry].lookaheads.push(lookahead);
+                self.dfa.mut_kernel_set(tar_state).entries[tar_entry].lookaheads.insert(lookahead);
             }
         }
     }
