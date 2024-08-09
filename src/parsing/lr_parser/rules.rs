@@ -1,3 +1,4 @@
+use derive_where::derive_where;
 use crate::handle::{Handle, Handled};
 use crate::handle::order::OrderlyHandled;
 
@@ -36,6 +37,7 @@ where
     type HandleCoreType = Tag::HandleCoreType;
 }
 
+#[derive_where(Clone, Copy)]
 pub enum GrammarSymbol<Terminal: Handled, Nonterminal: Handled> {
     Terminal(Handle<Terminal>),
     Nonterminal(Handle<Nonterminal>),

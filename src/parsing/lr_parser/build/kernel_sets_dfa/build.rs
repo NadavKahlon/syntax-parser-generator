@@ -5,7 +5,7 @@ use crate::handle::handle_map::HandleMap;
 use crate::handle::handled_vec::HandledVec;
 use crate::handle::order::OrderlyHandled;
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
-use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelItemsSet, KernelSetsDfa};
+use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelSet, KernelSetsDfa};
 use crate::parsing::lr_parser::rules::{ProductionRule, GrammarSymbol};
 
 impl<Terminal, Nonterminal, Tag> KernelSetsDfa<Terminal, Nonterminal, Tag>
@@ -18,9 +18,13 @@ where
         rules: &'a HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
         start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
         grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
+        rules_for_nonterminals: &'a HandleMap<
+            Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>
+        >,
     ) -> Self
     {
-        KernelSetsDfaBuilder::new(rules, start_rule, grammar_symbols).build()
+        KernelSetsDfaBuilder { rules, start_rule, grammar_symbols, rules_for_nonterminals }
+            .build()
     }
 }
 
@@ -33,6 +37,8 @@ where
     grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
     rules: &'a HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
     start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
+    rules_for_nonterminals:
+        &'a HandleMap<Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>>,
 }
 
 impl<'a, Terminal, Nonterminal, Tag> KernelSetsDfaBuilder<'a, Terminal, Nonterminal, Tag>
@@ -41,45 +47,13 @@ where
     Nonterminal: Handled,
     Tag: OrderlyHandled,
 {
-    fn new(
-        rules: &'a HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
-        start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
-        grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
-    ) -> Self
-    {
-        Self {
-            grammar_symbols,
-            rules,
-            start_rule,
-        }
-    }
-
     fn build(self) -> KernelSetsDfa<Terminal, Nonterminal, Tag> {
-        let rules_map = self.build_nonterminal_rules_map();
-        let items_nfa = self.build_items_nfa(&rules_map);
+        let items_nfa = self.build_items_nfa();
         self.items_nfa_to_kernels_dfa(&items_nfa)
     }
 
-    fn build_nonterminal_rules_map(&self)
-                                   -> HandleMap<Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>>
-    {
-        let mut map = HandleMap::new();
-        for nonterminal in self.grammar_symbols.list_nonterminals() {
-            map.insert(nonterminal, Vec::new());
-        }
-        for rule in self.rules.list_handles() {
-            map.get_mut(self.rules[rule].lhs).expect(
-                "Every nonterminal should have a map entry associated with it, as created in \
-                the preceding loop"
-            ).push(rule);
-        }
-        map
-    }
-
-    fn build_items_nfa(
-        &self,
-        rules_map: &HandleMap<Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>>,
-    ) -> Nfa<GrammarSymbol<Terminal, Nonterminal>, Item<Terminal, Nonterminal, Tag>>
+    fn build_items_nfa(&self)
+                       -> Nfa<GrammarSymbol<Terminal, Nonterminal>, Item<Terminal, Nonterminal, Tag>>
     {
         let mut nfa = Nfa::new();
         let mut item_states_map = HashMap::new();
@@ -106,12 +80,12 @@ where
                 if let GrammarSymbol::Nonterminal(nonterminal)
                     = self.rules[item.rule].rhs[item.dot]
                 {
-                    let nonterminal_rules =
-                        rules_map.get(nonterminal).expect(
+                    let rules_for_nonterminal =
+                        self.rules_for_nonterminals.get(nonterminal).expect(
                             "Every nonterminal should have a (maybe empty) vector of rules \
                             associated with it"
                         );
-                    for &next_rule in nonterminal_rules {
+                    for &next_rule in rules_for_nonterminal {
                         let next_item = Item { rule: next_rule, dot: 0 };
                         let &next_item_state = item_states_map.get(&next_item)
                             .expect("Every item should have an NFA state associated with it");
@@ -135,7 +109,7 @@ where
     ) -> KernelSetsDfa<Terminal, Nonterminal, Tag>
     {
         nfa.compile_to_dfa(|items| {
-            Some(KernelItemsSet::new(
+            Some(KernelSet::new(
                 items
                     .into_iter()
                     .filter(|item| item.is_kernel_item(self.start_rule))

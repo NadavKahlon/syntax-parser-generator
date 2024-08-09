@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
-use std::slice::Iter;
+use std::slice::{Iter, IterMut};
 use crate::handle::{Handle, Handled};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -27,6 +27,14 @@ where
     pub fn list_handles(&self) -> impl Iterator<Item=Handle<T>> {
         (0..self.contents.len())
             .map(|index| index.into())
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item=&T> {
+        self.into_iter()
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut T> {
+        self.into_iter()
     }
 }
 
@@ -72,5 +80,17 @@ where
             result.insert(item);
         }
         result
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut HandledVec<T>
+where
+    T: Handled,
+{
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.contents.iter_mut()
     }
 }

@@ -1,4 +1,7 @@
 pub mod build;
+mod lookaheads;
+mod compile_to_parser;
+mod firsts;
 
 use derive_where::derive_where;
 use crate::automata::dfa::{Dfa, DfaState};
@@ -8,10 +11,33 @@ use crate::handle::order::OrderlyHandled;
 use crate::parsing::lr_parser::rules::{GrammarSymbol, ProductionRule};
 
 pub type KernelSetsDfaState<Terminal, Nonterminal, Tag> =
-DfaState<GrammarSymbol<Terminal, Nonterminal>, KernelItemsSet<Terminal, Nonterminal, Tag>>;
+DfaState<GrammarSymbol<Terminal, Nonterminal>, KernelSet<Terminal, Nonterminal, Tag>>;
 
 pub type KernelSetsDfa<Terminal, Nonterminal, Tag> =
-Dfa<GrammarSymbol<Terminal, Nonterminal>, KernelItemsSet<Terminal, Nonterminal, Tag>>;
+Dfa<GrammarSymbol<Terminal, Nonterminal>, KernelSet<Terminal, Nonterminal, Tag>>;
+
+impl<Terminal, Nonterminal, Tag> KernelSetsDfa<Terminal, Nonterminal, Tag>
+where
+    Terminal: Handled,
+    Nonterminal: Handled,
+    Tag: OrderlyHandled,
+{
+    pub fn kernel_set(&self, state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>)
+                      -> &KernelSet<Terminal, Nonterminal, Tag>
+    {
+        self.get_label(state).as_ref().expect(
+            "All states of a KernelSetsDfa should be labeled by the corresponding KernelSet"
+        )
+    }
+
+    pub fn mut_kernel_set(&mut self, state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>)
+                          -> &mut KernelSet<Terminal, Nonterminal, Tag>
+    {
+        self.get_label_mut(state).expect(
+            "All states of a KernelSetsDfa should be labeled by the corresponding KernelSet"
+        )
+    }
+}
 
 #[derive_where(Hash, Clone, Copy, PartialEq, Eq)]
 pub struct Item<Terminal, Nonterminal, Tag>
@@ -37,16 +63,16 @@ where
     }
 }
 
-pub struct KernelItemsSet<Terminal, Nonterminal, Tag>
+pub struct KernelSet<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
     Nonterminal: Handled,
     Tag: OrderlyHandled,
 {
-    entries: HandledVec<KernelItemsSetEntry<Terminal, Nonterminal, Tag>>,
+    pub entries: HandledVec<KernelSetEntry<Terminal, Nonterminal, Tag>>,
 }
 
-impl<Terminal, Nonterminal, Tag> KernelItemsSet<Terminal, Nonterminal, Tag>
+impl<Terminal, Nonterminal, Tag> KernelSet<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
     Nonterminal: Handled,
@@ -54,12 +80,12 @@ where
 {
     pub fn new(kernel_items: impl Iterator<Item=Item<Terminal, Nonterminal, Tag>>) -> Self {
         Self {
-            entries: HandledVec::from_iter(kernel_items.map(KernelItemsSetEntry::new)),
+            entries: HandledVec::from_iter(kernel_items.map(KernelSetEntry::new)),
         }
     }
 }
 
-struct KernelItemsSetEntry<Terminal, Nonterminal, Tag>
+pub struct KernelSetEntry<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
     Nonterminal: Handled,
@@ -70,12 +96,11 @@ where
     propagations:
         Vec<(
             Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
-            Handle<KernelItemsSetEntry<Terminal, Nonterminal, Tag>>,
-            Handle<Terminal>,
+            Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>,
         )>,
 }
 
-impl<Terminal, Nonterminal, Tag> KernelItemsSetEntry<Terminal, Nonterminal, Tag>
+impl<Terminal, Nonterminal, Tag> KernelSetEntry<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
     Nonterminal: Handled,
@@ -90,7 +115,7 @@ where
     }
 }
 
-impl<Terminal, Nonterminal, Tag> Handled for KernelItemsSetEntry<Terminal, Nonterminal, Tag>
+impl<Terminal, Nonterminal, Tag> Handled for KernelSetEntry<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
     Nonterminal: Handled,

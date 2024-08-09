@@ -3,6 +3,7 @@ mod kernel_sets_dfa;
 
 use std::collections::HashSet;
 use crate::handle::{Handle, Handled};
+use crate::handle::handle_map::HandleMap;
 use crate::handle::handled_vec::HandledVec;
 use crate::handle::order::OrderlyHandled;
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
@@ -89,6 +90,24 @@ where
         (terminals.into_iter().collect(), nonterminals.into_iter().collect(), tags.into_iter().collect())
     }
 
+    fn index_rules_by_nonterminals(
+        &self,
+        grammar_symbols: &GrammarSymbolsCollection<Terminal, Nonterminal>
+    ) -> HandleMap<Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>>
+    {
+        let mut map = HandleMap::new();
+        for nonterminal in grammar_symbols.list_nonterminals() {
+            map.insert(nonterminal, Vec::new());
+        }
+        for rule in self.rules.list_handles() {
+            map.get_mut(self.rules[rule].lhs).expect(
+                "Every nonterminal should have a map entry associated with it, as created in \
+                the preceding loop"
+            ).push(rule);
+        }
+        map
+    }
+
     pub fn build(mut self) -> LrParser<Terminal, Nonterminal, Tag> {
         let (
             mut terminals,
@@ -116,10 +135,13 @@ where
             None,
         ));
 
-        let kernel_sets_dfa
-            = KernelSetsDfa::build(&self.rules, start_rule, &grammar_symbols);
+        let rules_for_nonterminals =
+            self.index_rules_by_nonterminals(&grammar_symbols);
 
-        todo!()
+        let mut kernel_sets_dfa
+            = KernelSetsDfa::build(&self.rules, start_rule, &grammar_symbols, &rules_for_nonterminals);
+        kernel_sets_dfa.generate_lookaheads(&grammar_symbols, &self.rules, &rules_for_nonterminals);
+        kernel_sets_dfa.compile_to_parser()
 
             // terminals,
             // nonterminals,

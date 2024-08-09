@@ -58,7 +58,7 @@ where
         self.states.insert(DfaState::new())
     }
 
-    pub(super) fn list_states(&self) -> impl Iterator<Item=Handle<DfaState<Symbol, Label>>> {
+    pub fn list_states(&self) -> impl Iterator<Item=Handle<DfaState<Symbol, Label>>> {
         self.states.list_handles()
     }
 
@@ -91,6 +91,10 @@ where
 
     pub fn get_label(&self, state: Handle<DfaState<Symbol, Label>>) -> &Option<Label> {
         &self.states[state].label
+    }
+
+    pub fn get_label_mut(&mut self, state: Handle<DfaState<Symbol, Label>>) -> Option<&mut Label> {
+        self.states[state].label.as_mut()
     }
 
     pub fn step(
