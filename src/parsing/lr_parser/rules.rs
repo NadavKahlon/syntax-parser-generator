@@ -11,7 +11,7 @@ where
     pub(super) lhs: Handle<Nonterminal>,
     pub(super) rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
     pub(super) tag: Handle<Tag>,
-    binding: Option<Handle<Binding<Terminal>>>,
+    pub(super) binding: Option<Handle<Binding<Terminal>>>,
 }
 
 impl<Terminal, Nonterminal, Tag> ProductionRule<Terminal, Nonterminal, Tag>
@@ -55,7 +55,7 @@ pub enum Associativity {
 
 pub struct Binding<Terminal: Handled> {
     pub(super) terminals: Vec<Handle<Terminal>>,
-    associativity: Associativity,
+    pub(super) associativity: Associativity,
 }
 
 impl<Terminal> Binding<Terminal>

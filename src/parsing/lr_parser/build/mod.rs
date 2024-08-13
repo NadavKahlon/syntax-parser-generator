@@ -18,6 +18,7 @@ where
     Tag: OrderlyHandled,
 {
     bindings: HandledVec<Binding<Terminal>>,
+    terminal_bindings_map: HandleMap<Terminal, Handle<Binding<Terminal>>>,
     rules: HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
     start_nonterminal: Option<Handle<Nonterminal>>,
 }
@@ -31,6 +32,7 @@ where
     pub fn new() -> Self {
         Self {
             bindings: HandledVec::new(),
+            terminal_bindings_map: HandleMap::new(),
             rules: HandledVec::new(),
             start_nonterminal: None,
         }
@@ -40,7 +42,15 @@ where
         &mut self, terminals: Vec<Handle<Terminal>>, associativity: Associativity,
     ) -> Handle<Binding<Terminal>>
     {
-        self.bindings.insert(Binding::new(terminals, associativity))
+        let binding =
+            self.bindings.insert(Binding::new(terminals, associativity));
+        for &terminal in &self.bindings[binding].terminals {
+            if !self.terminal_bindings_map.get(terminal).is_none() {
+                panic!("Multiple bindings defined for terminal {:?}", terminal);
+            }
+            self.terminal_bindings_map.insert(terminal, binding);
+        }
+        binding
     }
 
     pub fn register_rule(
@@ -141,13 +151,9 @@ where
         let mut kernel_sets_dfa
             = KernelSetsDfa::build(&self.rules, start_rule, &grammar_symbols, &rules_for_nonterminals);
         kernel_sets_dfa.generate_lookaheads(&grammar_symbols, &self.rules, &rules_for_nonterminals);
-        kernel_sets_dfa.compile_to_parser()
-
-            // terminals,
-            // nonterminals,
-            // self.rules,
-            // start_rule,
-            // end_of_input_marker,
-            // self.bindings,
+        kernel_sets_dfa.compile_to_parser(
+            &grammar_symbols, &self.rules, start_rule, &self.bindings, &self.terminal_bindings_map,
+            end_of_input_marker,
+        )
     }
 }

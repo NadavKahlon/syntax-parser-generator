@@ -92,9 +92,9 @@ where
     Nonterminal: Handled,
     Tag: OrderlyHandled,
 {
-    item: Item<Terminal, Nonterminal, Tag>,
-    lookaheads: HashSet<Handle<Terminal>>,
-    propagations:
+    pub item: Item<Terminal, Nonterminal, Tag>,
+    pub lookaheads: HashSet<Handle<Terminal>>,
+    pub propagations:
         Vec<(
             Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
             Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>,
