@@ -155,9 +155,6 @@ fn test_lexical_error() {
             lexeme_type: (),
         },
     ]);
-    println!(
-        "{:?}",
-        lexical_analyzer.analyze(&mut ByteReader::from_string("++-+".to_string()))
-            .collect::<Vec<Lexeme<()>>>()
-    );
+    let _ = lexical_analyzer.analyze(&mut ByteReader::from_string("++-+".to_string()))
+        .collect::<Vec<Lexeme<()>>>();
 }

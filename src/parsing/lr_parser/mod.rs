@@ -2,12 +2,14 @@ pub mod execute;
 pub mod build;
 pub mod rules;
 
+use derive_where::derive_where;
 use crate::handle::{Handle, Handled};
 use crate::handle::handle_map::HandleMap;
 use crate::handle::handled_vec::HandledVec;
 use crate::parsing::lr_parser::execute::LrParserExecution;
 
 #[derive(Clone, Copy)]
+#[derive_where(Debug)]
 enum LrParserAction<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
@@ -23,6 +25,7 @@ where
     Accept,
 }
 
+#[derive_where(Debug)]
 struct LrParserState<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
@@ -59,6 +62,7 @@ where
     type HandleCoreType = u16;
 }
 
+#[derive_where(Debug)]
 pub struct LrParser<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,

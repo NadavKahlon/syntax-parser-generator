@@ -19,11 +19,15 @@ where
         &mut self,
         grammar_symbols: &GrammarSymbolsCollection<Terminal, Nonterminal>,
         rules: &HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
+        start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
         rules_for_nonterminals: &HandleMap<
             Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>
         >,
+        end_of_input_marker: Handle<Terminal>,
     ) {
-        LookaheadsGenerator::new(grammar_symbols, self, rules, rules_for_nonterminals).generate();
+        LookaheadsGenerator::new(
+            grammar_symbols, self, rules, start_rule, rules_for_nonterminals, end_of_input_marker
+        ).generate();
     }
 }
 
@@ -35,8 +39,10 @@ where
 {
     dfa: &'a mut KernelSetsDfa<Terminal, Nonterminal, Tag>,
     rules: &'a HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
+    start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
     rules_for_nonterminals:
         &'a HandleMap<Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>>,
+    end_of_input_marker: Handle<Terminal>,
     firsts_map: FirstsMap<'a, Terminal, Nonterminal, Tag>,
     grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
 }
@@ -51,24 +57,50 @@ where
         grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
         dfa: &'a mut KernelSetsDfa<Terminal, Nonterminal, Tag>,
         rules: &'a HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
+        start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
         rules_for_nonterminals: &'a HandleMap<
             Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>
         >,
+        end_of_input_marker: Handle<Terminal>,
     ) -> Self {
         Self {
             dfa,
             rules,
+            start_rule,
             rules_for_nonterminals,
+            end_of_input_marker,
             grammar_symbols,
             firsts_map: FirstsMap::new(rules, rules_for_nonterminals),
         }
     }
     fn generate(&mut self) {
         self.firsts_map.build();
+        self.record_initial_lookahead();
         for state in self.dfa.list_states() {
             self.record_lookaheads_from(state);
         }
         self.close_lookahead_propagation();
+    }
+
+    fn record_initial_lookahead(&mut self) {
+        let initial_item = Item {
+            rule: self.start_rule,
+            dot: 0,
+        };
+        let initial_state =
+            self.dfa.get_initial_state().expect(
+                "The kernel-sets DFA is should have an initial state"
+            );
+        let initial_item_entry =
+            self.locate_entry(initial_state, initial_item).expect(
+                "The initial item is expected to be associated with the initial state of the \
+                kernel-sets DFA"
+            );
+        self.handle_lookahead_record_order(LookaheadRecordingOrder::Spontaneous {
+            tar_state: initial_state,
+            tar_entry: initial_item_entry,
+            lookahead: self.end_of_input_marker,
+        });
     }
 
     fn record_lookaheads_from(
@@ -92,8 +124,8 @@ where
                     = self.rules[mock_closure_item.rule].rhs.get(mock_closure_item.dot)
                 {
                     let target_item = Item {
-                        rule: kernel_set_entry.item.rule,
-                        dot: kernel_set_entry.item.dot + 1,
+                        rule: mock_closure_item.rule,
+                        dot: mock_closure_item.dot + 1,
                     };
                     let (tar_state, tar_entry) =
                         self.locate_target_entry(state, transition_symbol, target_item);
@@ -128,11 +160,9 @@ where
             let states: Vec<Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>> =
                 self.dfa.list_states().collect();
             for state in states {
-
                 let entries_handles: Vec<Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>> =
                     self.dfa.kernel_set(state).entries.list_handles().collect();
                 for entry_handle in entries_handles {
-
                     let entry = &self.dfa.kernel_set(state).entries[entry_handle];
                     let lookaheads = entry.lookaheads.clone();
                     let propagations = entry.propagations.clone();
@@ -212,19 +242,30 @@ where
                 "Since the target item was found by stepping from an item in the source \
                 item's closure, there should exist such transition from the source item's state"
             );
-        let set = self.dfa.get_label(target_state).as_ref().expect(
+        let target_entry = self.locate_entry(target_state, target_item)
+            .expect(
+                "Could not find the target item in the target state, though it was built by \
+                stepping from an item in source item's closure"
+            );
+        (target_state, target_entry)
+    }
+
+    fn locate_entry(
+        &self,
+        state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
+        item: Item<Terminal, Nonterminal, Tag>,
+    ) -> Option<Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>>
+    {
+        let set = self.dfa.get_label(state).as_ref().expect(
             "Every state should be labeled by the corresponding kernel items set"
         );
         for entry_handle in set.entries.list_handles() {
             let entry = &set.entries[entry_handle];
-            if entry.item == target_item {
-                return (target_state, entry_handle);
+            if entry.item == item {
+                return Some(entry_handle);
             }
         }
-        panic!(
-            "Could not find the target item in the target state, though it was built by stepping \
-            from an item in source item's closure"
-        )
+        None
     }
 
     fn handle_lookahead_record_order(

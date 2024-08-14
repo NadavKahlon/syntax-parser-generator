@@ -1,8 +1,10 @@
+use derive_where::derive_where;
 use crate::handle::{Handle, Handled};
 use crate::handle::handle_map::HandleMap;
 use crate::handle::handled_vec::HandledVec;
 use crate::parsing::lr_parser::rules::GrammarSymbol;
 
+#[derive_where(Debug)]
 pub struct GrammarSymbolsCollection<Terminal, Nonterminal>
 where
     Terminal: Handled,

@@ -13,6 +13,17 @@ where
     },
 }
 
+pub enum FinalDecision<Tag>
+where
+    Tag: Handled,
+{
+    Accept,
+    Reduce {
+        size: usize,
+        tag: Handle<Tag>,
+    },
+}
+
 impl<Tag> PartialEq<Self> for LrParserDecision<Tag>
 where
     Tag: Handled,
@@ -85,6 +96,18 @@ where
                 Some(LrParserInternalDecision::<Tag>::Accept) => return true,
                 _ => {}
             }
+        }
+    }
+
+    pub fn decide_final(&mut self) -> Option<FinalDecision<Tag>> {
+        match self.decide_internal(self.end_of_input_marker)? {
+            LrParserInternalDecision::Continue(decision) => match decision {
+                LrParserDecision::Shift => panic!("End of input marker shouldn't be shifted"),
+                LrParserDecision::Reduce { size, tag } => {
+                    Some(FinalDecision::Reduce { size, tag })
+                }
+            }
+            LrParserInternalDecision::Accept => Some(FinalDecision::Accept),
         }
     }
 

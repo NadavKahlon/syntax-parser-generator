@@ -240,14 +240,14 @@ where
     ) -> bool
     {
         match (
-            self.rules[reduced_rule].binding,
             self.terminal_bindings_map.get(shifted_terminal),
+            self.rules[reduced_rule].binding,
         ) {
             // We shift by default
             (None, _) => true,
             (_, None) => true,
 
-            (Some(binding_1), Some(&binding_2)) => {
+            (Some(&binding_1), Some(binding_2)) => {
                 if binding_1 < binding_2 {
                     true
                 } else if binding_1 > binding_2 {

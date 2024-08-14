@@ -40,7 +40,7 @@ where
     }
 }
 
-#[derive_where(Hash, Clone, Copy, PartialEq, Eq)]
+#[derive_where(Debug, Hash, Clone, Copy, PartialEq, Eq)]
 pub struct Item<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
@@ -64,6 +64,7 @@ where
     }
 }
 
+#[derive_where(Debug)]
 pub struct KernelSet<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
@@ -86,6 +87,7 @@ where
     }
 }
 
+#[derive_where(Debug)]
 pub struct KernelSetEntry<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,

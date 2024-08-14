@@ -150,7 +150,9 @@ where
 
         let mut kernel_sets_dfa
             = KernelSetsDfa::build(&self.rules, start_rule, &grammar_symbols, &rules_for_nonterminals);
-        kernel_sets_dfa.generate_lookaheads(&grammar_symbols, &self.rules, &rules_for_nonterminals);
+        kernel_sets_dfa.generate_lookaheads(
+            &grammar_symbols, &self.rules, start_rule, &rules_for_nonterminals, end_of_input_marker,
+        );
         kernel_sets_dfa.compile_to_parser(
             &grammar_symbols, &self.rules, start_rule, &self.bindings, &self.terminal_bindings_map,
             end_of_input_marker,

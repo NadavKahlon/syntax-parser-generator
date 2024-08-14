@@ -45,6 +45,24 @@ fn build_calculator_translator() -> SyntaxDirectedTranslator<T, Option<i32>> {
 
     builder.register_rule(
         expression,
+        vec![Terminal(T::Integer.handle())],
+        None,
+        Box::new(|nums: Vec<Option<i32>>| nums[0]),
+    );
+
+    builder.register_rule(
+        expression,
+        vec![
+            Terminal(T::LeftParenthesis.handle()),
+            Nonterminal(expression),
+            Terminal(T::RightParenthesis.handle()),
+        ],
+        None,
+        Box::new(|nums: Vec<Option<i32>>| nums[1]),
+    );
+
+    builder.register_rule(
+        expression,
         vec![Nonterminal(expression), Terminal(T::Plus.handle()), Nonterminal(expression)],
         Some(bindings[1]),
         Box::new(|nums: Vec<Option<i32>>| Some(nums[0].unwrap() + nums[2].unwrap())),
@@ -77,6 +95,14 @@ fn build_calculator_translator() -> SyntaxDirectedTranslator<T, Option<i32>> {
 #[test]
 fn test_successful_calculator_translator() {
     let calculator_translator = build_calculator_translator();
+
+    // 8 == 8
+    assert_eq!(
+            calculator_translator.translate(vec![
+                (T::Integer.handle(), Some(8)),
+            ].into_iter()),
+            Some(Some(8)),
+        );
 
     // 8 + 5 == 13
     assert_eq!(
@@ -178,6 +204,30 @@ fn test_successful_calculator_translator() {
             Some(Some(24)),
         );
 
+    // 6 + 2 * 5 = 16
+    assert_eq!(
+            calculator_translator.translate(vec![
+                (T::Integer.handle(), Some(6)),
+                (T::Plus.handle(), None),
+                (T::Integer.handle(), Some(2)),
+                (T::Star.handle(), None),
+                (T::Integer.handle(), Some(5)),
+            ].into_iter()),
+            Some(Some(16)),
+        );
+
+    // 6 * 2 + 5 = 17
+    assert_eq!(
+            calculator_translator.translate(vec![
+                (T::Integer.handle(), Some(6)),
+                (T::Star.handle(), None),
+                (T::Integer.handle(), Some(2)),
+                (T::Plus.handle(), None),
+                (T::Integer.handle(), Some(5)),
+            ].into_iter()),
+            Some(Some(17)),
+        );
+
     // 6 * (1 + 12 - (11 - 1)) / (2) + 5 = 14
     assert_eq!(
             calculator_translator.translate(vec![
@@ -201,7 +251,7 @@ fn test_successful_calculator_translator() {
                 (T::Plus.handle(), None),
                 (T::Integer.handle(), Some(5)),
             ].into_iter()),
-            Some(Some(24)),
+            Some(Some(14)),
         );
 }
 
