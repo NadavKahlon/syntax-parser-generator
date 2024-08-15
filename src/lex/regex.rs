@@ -12,7 +12,11 @@ pub enum Regex {
 
 impl Regex {
     pub fn single_char(value: char) -> Regex {
-        Regex::SingleCharacter { value: value.try_into().unwrap() }  // TODO unwrap
+        Regex::SingleCharacter {
+            value: value.try_into().unwrap_or_else(|_| panic!(
+                "Cannot create a single-character regex from {:?}, as it's not 1-byte long", value
+            ))
+        }
     }
 
     pub fn union(options: Vec<Regex>) -> Regex {
