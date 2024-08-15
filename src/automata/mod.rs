@@ -7,8 +7,3 @@ pub mod nfa;
 pub mod dfa;
 mod nfa_to_dfa;
 mod dfa_minimize;
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct InputSymbol {
-    pub id: u16,  // TODO change to u8
-}
