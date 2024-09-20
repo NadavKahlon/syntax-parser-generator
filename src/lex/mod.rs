@@ -12,10 +12,24 @@ pub struct LexemeDescriptor<LexemeType> {
     lexeme_type: LexemeType,
 }
 
+impl<LexemeType> LexemeDescriptor<LexemeType> {
+    pub fn new(pattern: Regex, lexeme_type: LexemeType) -> Self {
+        LexemeDescriptor { pattern, lexeme_type }
+    }
+
+    pub fn keyword(name: &str, lexeme_type: LexemeType) -> Self {
+        Self::new(Regex::constant_string(name), lexeme_type)
+    }
+
+    pub fn special_char(value: char, lexeme_type: LexemeType) -> Self {
+        Self::new(Regex::single_char(value), lexeme_type)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Lexeme<LexemeType> {
-    lexeme_type: LexemeType,
-    contents: String,
+    pub lexeme_type: LexemeType,
+    pub contents: String,
 }
 
 impl AutomaticallyHandled for u8 {

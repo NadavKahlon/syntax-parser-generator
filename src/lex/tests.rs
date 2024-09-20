@@ -18,17 +18,10 @@ enum TestLexemeType {
 
 fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
     vec![
-        LexemeDescriptor {
-            lexeme_type: TestLexemeType::If,
-            pattern: Regex::constant_string("if"),
-        },
-        LexemeDescriptor {
-            lexeme_type: TestLexemeType::While,
-            pattern: Regex::constant_string("while"),
-        },
-        LexemeDescriptor {
-            lexeme_type: TestLexemeType::Identifier,
-            pattern: Regex::concat(vec![
+        LexemeDescriptor::keyword("if", TestLexemeType::If),
+        LexemeDescriptor::keyword("while", TestLexemeType::While),
+        LexemeDescriptor::new(
+            Regex::concat(vec![
                 Regex::union(vec![
                     Regex::character_range('a', 'z'),
                     Regex::character_range('A', 'Z'),
@@ -43,10 +36,10 @@ fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
                     ]),
                 ),
             ]),
-        },
-        LexemeDescriptor {
-            lexeme_type: TestLexemeType::Integer,
-            pattern: Regex::concat(vec![
+            TestLexemeType::Identifier,
+        ),
+        LexemeDescriptor::new(
+            Regex::concat(vec![
                 Regex::optional(
                     Regex::union(vec![
                         Regex::single_char('+'),
@@ -55,15 +48,16 @@ fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
                 ),
                 Regex::plus_from(Regex::character_range('0', '9')),
             ]),
-        },
-        LexemeDescriptor {
-            lexeme_type: TestLexemeType::WhiteSpace,
-            pattern: Regex::plus_from(Regex::white_space()),
-        },
-        LexemeDescriptor {
-            lexeme_type: TestLexemeType::SemiColon,
-            pattern: Regex::single_char(';'),
-        },
+            TestLexemeType::Integer,
+        ),
+        LexemeDescriptor::new(
+            Regex::plus_from(Regex::white_space()),
+            TestLexemeType::WhiteSpace,
+        ),
+        LexemeDescriptor::new(
+            Regex::single_char(';'),
+            TestLexemeType::SemiColon,
+        ),
     ]
 }
 
@@ -150,10 +144,7 @@ fn test_lexical_analyzer_on_string() {
 #[should_panic]
 fn test_lexical_error() {
     let lexical_analyzer = LexicalAnalyzer::new(vec![
-        LexemeDescriptor {
-            pattern: Regex::single_char('+'),
-            lexeme_type: (),
-        },
+        LexemeDescriptor::new(Regex::single_char('+'), ())
     ]);
     let _ = lexical_analyzer.analyze(&mut ByteReader::from_string("++-+".to_string()))
         .collect::<Vec<Lexeme<()>>>();
