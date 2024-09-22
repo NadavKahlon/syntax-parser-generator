@@ -41,12 +41,19 @@ where
         &mut self,
         lhs: Handle<Nonterminal>,
         rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
-        binding: Option<Handle<Binding<Terminal>>>,
         handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
     ) {
-        let tag =
-            self.atomic_translators.insert(AtomicTranslator::new(handler));
-        self.lr_parser_builder.register_rule(lhs, rhs, binding, tag);
+        self.register_rule_raw(lhs, rhs, handler, None);
+    }
+
+    pub fn register_bound_rule(
+        &mut self,
+        lhs: Handle<crate::parsing::translator::build::Nonterminal>,
+        rhs: Vec<GrammarSymbol<Terminal, crate::parsing::translator::build::Nonterminal>>,
+        handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
+        binding: Handle<Binding<Terminal>>,
+    ) {
+        self.register_rule_raw(lhs, rhs, handler, Some(binding))
     }
 
     pub fn set_start_nonterminal(&mut self, nonterminal: Handle<Nonterminal>) {
@@ -63,6 +70,18 @@ where
             lr_parser: lr_parser_builder.build(),
             atomic_translators,
         }
+    }
+
+    fn register_rule_raw(
+        &mut self,
+        lhs: Handle<Nonterminal>,
+        rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
+        handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
+        optional_binding: Option<Handle<Binding<Terminal>>>,
+    ) {
+        let tag =
+            self.atomic_translators.insert(AtomicTranslator::new(handler));
+        self.lr_parser_builder.register_rule(lhs, rhs, optional_binding, tag);
     }
 }
 
