@@ -1,14 +1,14 @@
 use crate::handle::Handled;
 use crate::handle::order::OrderlyHandled;
 
-pub struct AtomicTranslator<Satellite>(Box<dyn Fn(Vec<Satellite>) -> Satellite>);
+pub struct AtomicTranslator<Satellite>(Box<dyn Fn(Vec<Satellite>) -> Option<Satellite>>);
 
 impl<Satellite> AtomicTranslator<Satellite> {
-    pub fn new(translation_routine: Box<dyn Fn(Vec<Satellite>) -> Satellite>) -> Self {
+    pub fn new(translation_routine: Box<dyn Fn(Vec<Satellite>) -> Option<Satellite>>) -> Self {
         Self(translation_routine)
     }
 
-    pub fn translate(&self, src: Vec<Satellite>) -> Satellite {
+    pub fn translate(&self, src: Vec<Satellite>) -> Option<Satellite> {
         (self.0)(src)
     }
 }

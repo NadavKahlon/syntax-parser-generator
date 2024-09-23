@@ -41,7 +41,7 @@ where
         &mut self,
         lhs: Handle<Nonterminal>,
         rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
-        handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
+        handler: Box<dyn Fn(Vec<Satellite>) -> Option<Satellite>>,
     ) {
         self.register_rule_raw(lhs, rhs, handler, None);
     }
@@ -50,7 +50,7 @@ where
         &mut self,
         lhs: Handle<crate::parsing::translator::build::Nonterminal>,
         rhs: Vec<GrammarSymbol<Terminal, crate::parsing::translator::build::Nonterminal>>,
-        handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
+        handler: Box<dyn Fn(Vec<Satellite>) -> Option<Satellite>>,
         binding: Handle<Binding<Terminal>>,
     ) {
         self.register_rule_raw(lhs, rhs, handler, Some(binding))
@@ -76,7 +76,7 @@ where
         &mut self,
         lhs: Handle<Nonterminal>,
         rhs: Vec<GrammarSymbol<Terminal, Nonterminal>>,
-        handler: Box<dyn Fn(Vec<Satellite>) -> Satellite>,
+        handler: Box<dyn Fn(Vec<Satellite>) -> Option<Satellite>>,
         optional_binding: Option<Handle<Binding<Terminal>>>,
     ) {
         let tag =

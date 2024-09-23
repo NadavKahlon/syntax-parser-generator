@@ -75,7 +75,7 @@ where
         let rhs_satellites = self.satellite_stack
             .drain((self.satellite_stack.len() - size)..).collect();
         let lhs_satellite =
-            self.translator.atomic_translators[tag].translate(rhs_satellites);
+            self.translator.atomic_translators[tag].translate(rhs_satellites)?;
         self.satellite_stack.push(lhs_satellite);
         Some(())
     }

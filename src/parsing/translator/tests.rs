@@ -46,7 +46,7 @@ fn build_calculator_translator() -> SyntaxDirectedTranslator<T, Option<i32>> {
     builder.register_rule(
         expression,
         vec![Terminal(T::Integer.handle())],
-        Box::new(|nums: Vec<Option<i32>>| nums[0]),
+        Box::new(|nums: Vec<Option<i32>>| Some(nums[0])),
     );
 
     builder.register_rule(
@@ -56,34 +56,34 @@ fn build_calculator_translator() -> SyntaxDirectedTranslator<T, Option<i32>> {
             Nonterminal(expression),
             Terminal(T::RightParenthesis.handle()),
         ],
-        Box::new(|nums: Vec<Option<i32>>| nums[1]),
+        Box::new(|nums: Vec<Option<i32>>| Some(nums[1])),
     );
 
     builder.register_bound_rule(
         expression,
         vec![Nonterminal(expression), Terminal(T::Plus.handle()), Nonterminal(expression)],
-        Box::new(|nums: Vec<Option<i32>>| Some(nums[0].unwrap() + nums[2].unwrap())),
+        Box::new(|nums: Vec<Option<i32>>| Some(Some(nums[0].unwrap() + nums[2].unwrap()))),
         bindings[1],
     );
 
     builder.register_bound_rule(
         expression,
         vec![Nonterminal(expression), Terminal(T::Minus.handle()), Nonterminal(expression)],
-        Box::new(|nums: Vec<Option<i32>>| Some(nums[0].unwrap() - nums[2].unwrap())),
+        Box::new(|nums: Vec<Option<i32>>| Some(Some(nums[0].unwrap() - nums[2].unwrap()))),
         bindings[1],
     );
 
     builder.register_bound_rule(
         expression,
         vec![Nonterminal(expression), Terminal(T::Star.handle()), Nonterminal(expression)],
-        Box::new(|nums: Vec<Option<i32>>| Some(nums[0].unwrap() * nums[2].unwrap())),
+        Box::new(|nums: Vec<Option<i32>>| Some(Some(nums[0].unwrap() * nums[2].unwrap()))),
         bindings[0],
     );
 
     builder.register_bound_rule(
         expression,
         vec![Nonterminal(expression), Terminal(T::Slash.handle()), Nonterminal(expression)],
-        Box::new(|nums: Vec<Option<i32>>| Some(nums[0].unwrap() / nums[2].unwrap())),
+        Box::new(|nums: Vec<Option<i32>>| Some(Some(nums[0].unwrap() / nums[2].unwrap()))),
         bindings[0],
     );
 
