@@ -32,6 +32,15 @@ pub struct Lexeme<LexemeType> {
     pub contents: String,
 }
 
+impl<LexemeType> Lexeme<LexemeType> {
+    pub fn new(lexeme_type: LexemeType, contents: &str) -> Self {
+        Self {
+            lexeme_type,
+            contents: String::from(contents),
+        }
+    }
+}
+
 impl AutomaticallyHandled for u8 {
     type HandleCoreType = u8;
     fn serial(&self) -> usize { *self as usize }
