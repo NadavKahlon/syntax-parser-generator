@@ -10,7 +10,6 @@ where
     Terminal: Handled,
     Nonterminal: Handled,
 {
-    all_symbols: HandledVec<GrammarSymbol<Terminal, Nonterminal>>,
     terminals_map: HandleMap<Terminal, Handle<GrammarSymbol<Terminal, Nonterminal>>>,
     nonterminals_map: HandleMap<Nonterminal, Handle<GrammarSymbol<Terminal, Nonterminal>>>,
 }
@@ -35,7 +34,7 @@ where
             nonterminals_map.insert(nonterminal, symbol);
         }
 
-        Self { all_symbols, terminals_map, nonterminals_map }
+        Self { terminals_map, nonterminals_map }
     }
 
     pub fn list_nonterminals<'a>(&'a self) -> impl Iterator<Item=Handle<Nonterminal>> + 'a {
