@@ -1,5 +1,5 @@
 mod automata;
-mod lex;
-mod reader;
+pub mod lex;
+pub mod reader;
 mod handle;
-mod parsing;
+pub mod parsing;
