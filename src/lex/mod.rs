@@ -8,21 +8,21 @@ pub mod lexical_analyzer;
 mod tests;
 
 pub struct LexemeDescriptor<LexemeType> {
-    pattern: Regex,
     lexeme_type: LexemeType,
+    pattern: Regex,
 }
 
 impl<LexemeType> LexemeDescriptor<LexemeType> {
-    pub fn new(pattern: Regex, lexeme_type: LexemeType) -> Self {
-        LexemeDescriptor { pattern, lexeme_type }
+    pub fn new(lexeme_type: LexemeType, pattern: Regex) -> Self {
+        LexemeDescriptor { lexeme_type, pattern }
     }
 
-    pub fn keyword(name: &str, lexeme_type: LexemeType) -> Self {
-        Self::new(Regex::constant_string(name), lexeme_type)
+    pub fn keyword(lexeme_type: LexemeType, name: &str) -> Self {
+        Self::new(lexeme_type, Regex::constant_string(name))
     }
 
-    pub fn special_char(value: char, lexeme_type: LexemeType) -> Self {
-        Self::new(Regex::single_char(value), lexeme_type)
+    pub fn special_char(lexeme_type: LexemeType, value: char) -> Self {
+        Self::new(lexeme_type, Regex::single_char(value))
     }
 }
 

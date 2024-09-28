@@ -18,9 +18,10 @@ enum TestLexemeType {
 
 fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
     vec![
-        LexemeDescriptor::keyword("if", TestLexemeType::If),
-        LexemeDescriptor::keyword("while", TestLexemeType::While),
+        LexemeDescriptor::keyword(TestLexemeType::If, "if"),
+        LexemeDescriptor::keyword(TestLexemeType::While, "while"),
         LexemeDescriptor::new(
+            TestLexemeType::Identifier,
             Regex::concat(vec![
                 Regex::union(vec![
                     Regex::character_range('a', 'z'),
@@ -36,9 +37,9 @@ fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
                     ]),
                 ),
             ]),
-            TestLexemeType::Identifier,
         ),
         LexemeDescriptor::new(
+            TestLexemeType::Integer,
             Regex::concat(vec![
                 Regex::optional(
                     Regex::union(vec![
@@ -48,15 +49,14 @@ fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
                 ),
                 Regex::plus_from(Regex::character_range('0', '9')),
             ]),
-            TestLexemeType::Integer,
         ),
         LexemeDescriptor::new(
-            Regex::plus_from(Regex::white_space()),
             TestLexemeType::WhiteSpace,
+            Regex::plus_from(Regex::white_space()),
         ),
         LexemeDescriptor::new(
-            Regex::single_char(';'),
             TestLexemeType::SemiColon,
+            Regex::single_char(';'),
         ),
     ]
 }
@@ -144,7 +144,7 @@ fn test_lexical_analyzer_on_string() {
 #[should_panic]
 fn test_lexical_error() {
     let lexical_analyzer = LexicalAnalyzer::new(vec![
-        LexemeDescriptor::new(Regex::single_char('+'), ())
+        LexemeDescriptor::new((), Regex::single_char('+'))
     ]);
     let _ = lexical_analyzer.analyze(&mut ByteReader::from_string("++-+".to_string()))
         .collect::<Vec<Lexeme<()>>>();
