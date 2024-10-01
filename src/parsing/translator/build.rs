@@ -48,6 +48,12 @@ where
             .insert(String::from(dub), GrammarSymbol::Terminal(lexeme_type.handle()));
     }
 
+    pub fn dub_lexeme_types<'a>(&mut self, lexeme_type_dubs: impl Iterator<Item=(LexemeType, &'a str)>) {
+        for (lexeme_type, dub) in lexeme_type_dubs {
+            self.dub_lexeme_type(lexeme_type, dub);
+        }
+    }
+
     pub fn new_nonterminal(&mut self, dub: &str) {
         if self.grammar_symbol_dub_map.contains_key(dub) {
             panic!(
@@ -57,6 +63,12 @@ where
         }
         let nonterminal = self.nonterminals.insert(Nonterminal);
         self.grammar_symbol_dub_map.insert(String::from(dub), GrammarSymbol::Nonterminal(nonterminal));
+    }
+
+    pub fn new_nonterminals<'a>(&mut self, dubs: impl Iterator<Item=&'a str>) {
+        for dub in dubs {
+            self.new_nonterminal(dub);
+        }
     }
 
     pub fn set_start_nonterminal(&mut self, dub: &str) {
@@ -139,6 +151,29 @@ where
         F: Fn(&mut Context, Vec<Satellite>) -> Satellite + 'static,
     {
         self.register_rule_raw(lhs, rhs, Some(binding_dub), satellite_reducer);
+    }
+
+    pub fn register_identity_rule(&mut self, lhs: &str, rhs: &str) {
+        self.register_rule(
+            lhs,
+            vec![rhs],
+            |_context, mut satellites| satellites.pop().expect(
+                "Tried to reduce satellites using `identity_satellite_reducer`, but the \
+                provided RHS satellite list is empty (it should contain a single satellite for the \
+                single item in the RHS)"
+            ),
+        );
+    }
+
+    pub fn register_empty_rule<F>(&mut self, lhs: &str, default_satellite_builder: F)
+    where
+        F: Fn(&mut Context) -> Satellite + 'static,
+    {
+        self.register_rule(
+            lhs,
+            vec![],
+            move |context, _satellites| default_satellite_builder(context),
+        )
     }
 
     fn register_rule_raw<F>(
