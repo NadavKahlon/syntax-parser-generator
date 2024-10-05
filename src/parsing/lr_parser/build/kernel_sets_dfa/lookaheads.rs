@@ -26,7 +26,7 @@ where
         end_of_input_marker: Handle<Terminal>,
     ) {
         LookaheadsGenerator::new(
-            grammar_symbols, self, rules, start_rule, rules_for_nonterminals, end_of_input_marker
+            grammar_symbols, self, rules, start_rule, rules_for_nonterminals, end_of_input_marker,
         ).generate();
     }
 }
@@ -120,15 +120,9 @@ where
             };
             let mock_closure = self.lr1_item_closure(mock_item);
             for mock_closure_item in mock_closure {
-                if let Some(&transition_symbol)
-                    = self.rules[mock_closure_item.rule].rhs.get(mock_closure_item.dot)
+                if let Some((tar_state, tar_entry))
+                    = self.locate_target_entry(state, &mock_closure_item)
                 {
-                    let target_item = Item {
-                        rule: mock_closure_item.rule,
-                        dot: mock_closure_item.dot + 1,
-                    };
-                    let (tar_state, tar_entry) =
-                        self.locate_target_entry(state, transition_symbol, target_item);
                     if mock_closure_item.lookahead != mock_terminal {
                         orders.push(LookaheadRecordingOrder::Spontaneous {
                             tar_state,
@@ -229,25 +223,45 @@ where
     pub fn locate_target_entry(
         &self,
         src_state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
-        transition_symbol: GrammarSymbol<Terminal, Nonterminal>,
-        target_item: Item<Terminal, Nonterminal, Tag>,
-    ) -> (
+        mock_closure_item: &Lr1Item<Terminal, Nonterminal, Tag>,
+    ) -> Option<(
         Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
         Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>,
-    ) {
-        let transition_symbol_handle =
-            self.grammar_symbols.get_handle(&transition_symbol);
-        let target_state = self.dfa.step(src_state, transition_symbol_handle)
-            .expect(
-                "Since the target item was found by stepping from an item in the source \
-                item's closure, there should exist such transition from the source item's state"
-            );
-        let target_entry = self.locate_entry(target_state, target_item)
-            .expect(
-                "Could not find the target item in the target state, though it was built by \
-                stepping from an item in source item's closure"
-            );
-        (target_state, target_entry)
+    )> {
+        if let Some(&transition_symbol)
+            = self.rules[mock_closure_item.rule].rhs.get(mock_closure_item.dot)
+        {
+            let transition_symbol_handle =
+                self.grammar_symbols.get_handle(&transition_symbol);
+            let target_state = self.dfa.step(src_state, transition_symbol_handle)
+                .expect(
+                    "Since the target item was found by stepping from an item in the source \
+                    item's closure, there should exist such transition from the source item's state"
+                );
+            let target_item = Item {
+                rule: mock_closure_item.rule,
+                dot: mock_closure_item.dot + 1,
+            };
+            let target_entry = self.locate_entry(target_state, target_item)
+                .expect(
+                    "Could not find the target item in the target state, though it was built \
+                    by stepping from an item in source item's closure"
+                );
+            Some((target_state, target_entry))
+        } else if self.rules[mock_closure_item.rule].rhs.is_empty() {
+            // My addition to the algorithm: empty rules are also kernel items, and deserve
+            // lookaheads
+            let target_item = Item { rule: mock_closure_item.rule, dot: mock_closure_item.dot };
+            let target_entry = self
+                .locate_entry(src_state, target_item)
+                .expect(
+                    "Could not find the target empty-item in the current state, though it \
+                    was generated as an item in the source item's closure"
+                );
+            Some((src_state, target_entry))
+        } else {
+            None
+        }
     }
 
     fn locate_entry(

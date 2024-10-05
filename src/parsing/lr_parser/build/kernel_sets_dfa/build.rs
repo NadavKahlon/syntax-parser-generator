@@ -119,6 +119,9 @@ where
     }
 
     fn is_kernel_item(&self, item: &Item<Terminal, Nonterminal, Tag>) -> bool {
-        (item.dot != 0) || (item.rule == self.start_rule)
+        // My addition to the algorithm: empty rules are also kernel items
+        (item.dot != 0) ||
+            (item.rule == self.start_rule) ||
+            self.rules[item.rule].rhs.is_empty()
     }
 }
