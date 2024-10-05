@@ -51,19 +51,6 @@ where
     pub dot: usize,
 }
 
-impl<Terminal, Nonterminal, Tag> Item<Terminal, Nonterminal, Tag>
-where
-    Terminal: Handled,
-    Nonterminal: Handled,
-    Tag: OrderlyHandled,
-{
-    pub fn is_kernel_item(&self, start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>)
-                          -> bool
-    {
-        (self.dot != 0) || (self.rule == start_rule)
-    }
-}
-
 #[derive_where(Debug)]
 pub struct KernelSet<Terminal, Nonterminal, Tag>
 where

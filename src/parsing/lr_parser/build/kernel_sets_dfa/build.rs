@@ -112,9 +112,13 @@ where
             Some(KernelSet::new(
                 items
                     .into_iter()
-                    .filter(|item| item.is_kernel_item(self.start_rule))
+                    .filter(|item| self.is_kernel_item(item))
                     .copied()
             ))
         })
+    }
+
+    fn is_kernel_item(&self, item: &Item<Terminal, Nonterminal, Tag>) -> bool {
+        (item.dot != 0) || (item.rule == self.start_rule)
     }
 }
