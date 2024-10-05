@@ -4,6 +4,7 @@ use crate::handle::handle_bit_set::HandleBitSet;
 use crate::handle::handle_map::HandleMap;
 use crate::handle::handled_vec::HandledVec;
 
+#[derive(Debug)]
 pub struct NfaState<Symbol, Label>
 where
     Symbol: Handled,
@@ -30,6 +31,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Nfa<Symbol, Label>
 where
     Symbol: Handled,

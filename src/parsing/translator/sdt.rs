@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crate::handle::auto::AutomaticallyHandled;
 use crate::handle::handle_map::HandleMap;
 use crate::handle::{Handle, Handled};
@@ -15,7 +16,7 @@ pub struct SyntaxDirectedTranslator<LexemeType: Handled, Context, Satellite> {
     pub(super) satellite_reducers: HandledVec<SatelliteReducer<Context, Satellite>>,
 }
 
-impl<LexemeType, Context, Satellite> SyntaxDirectedTranslator<LexemeType, Context, Satellite>
+impl<LexemeType: Debug, Context, Satellite> SyntaxDirectedTranslator<LexemeType, Context, Satellite>
 where
     LexemeType: AutomaticallyHandled,
 {
@@ -70,7 +71,7 @@ struct SyntaxDirectedTranslatorExecution<'a, LexemeType: AutomaticallyHandled, C
         LrParserExecution<'a, LexemeType, Nonterminal, SatelliteReducer<Context, Satellite>>,
 }
 
-impl<'a, LexemeType: AutomaticallyHandled, Context, Satellite>
+impl<'a, LexemeType: AutomaticallyHandled + Debug, Context, Satellite>
 SyntaxDirectedTranslatorExecution<'a, LexemeType, Context, Satellite>
 {
     fn new(

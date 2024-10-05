@@ -6,7 +6,7 @@ use crate::parsing::translator::sdt::SyntaxDirectedTranslator;
 
 struct Context;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum LexemeType {
     Integer,
     Plus,
