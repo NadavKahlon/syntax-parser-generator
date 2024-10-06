@@ -1,8 +1,8 @@
-use crate::c::lex::lexeme_types::CLexemeType;
-use crate::lex::{Lexeme, LexemeDescriptor};
-use crate::lex::lexical_analyzer::LexicalAnalyzer;
-use crate::lex::regex::Regex;
-use crate::reader::Reader;
+use compiler_frontend_generator::lex::{Lexeme, LexemeDescriptor};
+use compiler_frontend_generator::lex::lexical_analyzer::LexicalAnalyzer;
+use compiler_frontend_generator::lex::regex::Regex;
+use compiler_frontend_generator::reader::Reader;
+use crate::c_lang::lex::lexeme_types::CLexemeType;
 
 pub struct CLexicalAnalyzer {
     lexer: LexicalAnalyzer<CLexemeType>,

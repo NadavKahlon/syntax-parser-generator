@@ -1,10 +1,10 @@
-use crate::c::lex::lexeme_types::CLexemeType;
-use crate::c::parsing::ast::AbstractProgram;
-use crate::c::parsing::context::CParserContext;
-use crate::c::parsing::node::CParserNode;
-use crate::lex::Lexeme;
-use crate::parsing::translator::build::SyntaxDirectedTranslatorBuilder;
-use crate::parsing::translator::sdt::SyntaxDirectedTranslator;
+use compiler_frontend_generator::lex::Lexeme;
+use compiler_frontend_generator::parsing::translator::build::SyntaxDirectedTranslatorBuilder;
+use compiler_frontend_generator::parsing::translator::sdt::SyntaxDirectedTranslator;
+use crate::c_lang::lex::lexeme_types::CLexemeType;
+use crate::c_lang::parsing::ast::AbstractProgram;
+use crate::c_lang::parsing::context::CParserContext;
+use crate::c_lang::parsing::node::CParserNode;
 
 pub struct CParser {
     translator: SyntaxDirectedTranslator<CLexemeType, CParserContext, Option<CParserNode>>,

@@ -1,4 +1,4 @@
-use crate::c::parsing::ast;
+use crate::c_lang::parsing::ast;
 
 pub enum CParserNode {
     // Core

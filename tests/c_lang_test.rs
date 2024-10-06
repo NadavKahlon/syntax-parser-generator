@@ -1,7 +1,9 @@
-use crate::c::lex::lexical_analyzer::CLexicalAnalyzer;
-use crate::c::parsing::ast;
-use crate::c::parsing::parser::CParser;
-use crate::reader::string_reader::ByteReader;
+use compiler_frontend_generator::reader::string_reader::ByteReader;
+use c_lang::lex::lexical_analyzer::CLexicalAnalyzer;
+use c_lang::parsing::ast;
+use c_lang::parsing::parser::CParser;
+
+mod c_lang;
 
 #[test]
 fn test_c_ast_pipeline() {

@@ -1,6 +1,5 @@
-use crate::c::parsing::ast;
-use crate::c::parsing::ast::LocalStatement;
-use crate::c::parsing::node::CParserNode;
+use crate::c_lang::parsing::ast;
+use crate::c_lang::parsing::node::CParserNode;
 
 pub struct CParserContext;
 
@@ -34,7 +33,7 @@ impl CParserContext {
             name: CParserNode::take_identifier(&mut satellites, 1),
             retval_dtype: Box::from(CParserNode::take_dtype(&mut satellites, 0)),
             formal_args: CParserNode::take_formal_arg_list(&mut satellites, 3),
-            body: Box::from(LocalStatement::Block {
+            body: Box::from(ast::LocalStatement::Block {
                 statements: CParserNode::take_local_statement_list(&mut satellites, 6),
             }),
         }))
