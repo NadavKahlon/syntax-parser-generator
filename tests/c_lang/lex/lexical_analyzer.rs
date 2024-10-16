@@ -1,7 +1,7 @@
-use compiler_frontend_generator::lex::{Lexeme, LexemeDescriptor};
-use compiler_frontend_generator::lex::lexical_analyzer::LexicalAnalyzer;
-use compiler_frontend_generator::lex::regex::Regex;
-use compiler_frontend_generator::reader::Reader;
+use syntax_parser_generator::lex::{Lexeme, LexemeDescriptor};
+use syntax_parser_generator::lex::lexical_analyzer::LexicalAnalyzer;
+use syntax_parser_generator::lex::regex::Regex;
+use syntax_parser_generator::reader::Reader;
 use crate::c_lang::lex::lexeme_types::CLexemeType;
 
 pub struct CLexicalAnalyzer {

@@ -1,6 +1,6 @@
-use compiler_frontend_generator::lex::Lexeme;
-use compiler_frontend_generator::parsing::translator::build::SyntaxDirectedTranslatorBuilder;
-use compiler_frontend_generator::parsing::translator::sdt::SyntaxDirectedTranslator;
+use syntax_parser_generator::lex::Lexeme;
+use syntax_parser_generator::parsing::translator::build::SyntaxDirectedTranslatorBuilder;
+use syntax_parser_generator::parsing::translator::sdt::SyntaxDirectedTranslator;
 use crate::c_lang::lex::lexeme_types::CLexemeType;
 use crate::c_lang::parsing::ast::AbstractProgram;
 use crate::c_lang::parsing::context::CParserContext;
