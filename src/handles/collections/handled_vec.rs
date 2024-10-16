@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::slice::{Iter, IterMut};
-use crate::handle::{Handle, Handled};
+use crate::handles::{Handle, Handled};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct HandledVec<T>

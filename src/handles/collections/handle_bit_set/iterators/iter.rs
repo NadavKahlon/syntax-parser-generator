@@ -1,6 +1,5 @@
-use crate::handle::handle_bit_set::HandleBitSet;
-use crate::handle::{Handle, Handled};
-use crate::handle::core::HandleCore;
+use crate::handles::collections::handle_bit_set::HandleBitSet;
+use crate::handles::{Handle, HandleCore, Handled};
 
 impl<T> HandleBitSet<T>
 where

@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use derive_where::derive_where;
-use crate::handle::{Handle, Handled};
+use crate::handles::{Handle, Handled};
 
 // TODO "complete map", where everything is known (no "Option<U>", just U). Why? to half tne space
 #[derive_where(PartialEq, Eq, Clone; U)]

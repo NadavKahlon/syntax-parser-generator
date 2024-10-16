@@ -1,7 +1,7 @@
 use std::hash::Hash;
 use crate::lex::Lexeme;
 use crate::lex::lexical_analyzer::LexicalAnalyzer;
-use crate::reader::Reader;
+use crate::readers::Reader;
 
 pub struct LexemeIterator<'a, LexemeType, ReaderStruct>
 where

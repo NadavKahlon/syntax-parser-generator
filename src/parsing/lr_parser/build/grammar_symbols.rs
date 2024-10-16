@@ -1,7 +1,6 @@
 use derive_where::derive_where;
-use crate::handle::{Handle, Handled};
-use crate::handle::handle_map::HandleMap;
-use crate::handle::handled_vec::HandledVec;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
 use crate::parsing::lr_parser::rules::GrammarSymbol;
 
 #[derive_where(Debug)]

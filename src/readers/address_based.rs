@@ -1,27 +1,27 @@
 use std::marker::PhantomData;
-use crate::reader::Reader;
+use crate::readers::Reader;
 
 pub trait AddressSpace<T> {
     fn read_at(&self, address: usize) -> Option<T>;
     fn is_available(&self, address: usize) -> bool;
 }
 
-pub struct AddressBasedReader<T, U>
+pub struct AddressBasedReader<T, AddressSpaceType>
 where
-    U: AddressSpace<T>,
+    AddressSpaceType: AddressSpace<T>,
 {
-    address_space: U,
+    address_space: AddressSpaceType,
     head_address: usize,
     tail_address: usize,
     cursor_address: usize,
     phantom_data: PhantomData<T>,
 }
 
-impl<T, U> AddressBasedReader<T, U>
+impl<T, AddressSpaceType> AddressBasedReader<T, AddressSpaceType>
 where
-    U: AddressSpace<T>,
+    AddressSpaceType: AddressSpace<T>,
 {
-    pub fn raw_new(address_space: U) -> Self {
+    pub fn raw_new(address_space: AddressSpaceType) -> Self {
         Self {
             address_space,
             head_address: 0,
@@ -32,9 +32,9 @@ where
     }
 }
 
-impl<T, U> Reader<T> for AddressBasedReader<T, U>
+impl<T, AddressSpaceType> Reader<T> for AddressBasedReader<T, AddressSpaceType>
 where
-    U: AddressSpace<T>,
+    AddressSpaceType: AddressSpace<T>,
 {
     fn is_available(&self) -> bool {
         self.address_space.is_available(self.cursor_address)

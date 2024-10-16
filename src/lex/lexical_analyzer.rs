@@ -2,11 +2,15 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use crate::automata::dfa::Dfa;
 use crate::automata::nfa::Nfa;
-use crate::handle::auto::AutomaticallyHandled;
+use crate::handles::specials::AutomaticallyHandled;
 use crate::lex::lexeme_iterator::LexemeIterator;
 use crate::lex::{Lexeme, LexemeDescriptor};
-use crate::reader::Reader;
+use crate::readers::Reader;
 
+impl AutomaticallyHandled for u8 {
+    type HandleCoreType = u8;
+    fn serial(&self) -> usize { *self as usize }
+}
 
 pub struct LexicalAnalyzer<LexemeType>
 {

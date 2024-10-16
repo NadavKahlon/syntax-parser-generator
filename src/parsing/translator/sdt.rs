@@ -1,8 +1,7 @@
 use std::fmt::Debug;
-use crate::handle::auto::AutomaticallyHandled;
-use crate::handle::handle_map::HandleMap;
-use crate::handle::{Handle, Handled};
-use crate::handle::handled_vec::HandledVec;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
+use crate::handles::specials::AutomaticallyHandled;
 use crate::lex::Lexeme;
 use crate::parsing::lr_parser::execute::{FinalDecision, LrParserDecision, LrParserExecution};
 use crate::parsing::lr_parser::LrParser;

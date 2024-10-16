@@ -1,4 +1,4 @@
-use crate::handle::auto::AutomaticallyHandled;
+use crate::handles::specials::AutomaticallyHandled;
 use crate::lex::Lexeme;
 use crate::parsing::lr_parser::rules::Associativity;
 use crate::parsing::translator::build::SyntaxDirectedTranslatorBuilder;

@@ -2,9 +2,8 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use derive_where::derive_where;
 use crate::automata::dfa::{Dfa, DfaState};
-use crate::handle::{Handle, Handled};
-use crate::handle::handle_map::HandleMap;
-use crate::handle::handled_vec::HandledVec;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
 
 impl<Symbol, Label> Dfa<Symbol, Label>
 where
@@ -256,8 +255,8 @@ impl<Symbol: Handled, Label> Handled for EquivalenceSet<Symbol, Label> {
 
 #[cfg(test)]
 mod tests {
-    use crate::handle::auto::AutomaticallyHandled;
     use pretty_assertions::assert_eq;
+    use crate::handles::specials::AutomaticallyHandled;
     use super::*;
 
     #[derive(Clone, Copy)]

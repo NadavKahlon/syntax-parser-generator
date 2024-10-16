@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Index;
-use crate::handle::{Handle, Handled};
+use crate::handles::{Handle, Handled};
 
 pub struct HandledHashMap<T>
 where
@@ -54,7 +54,7 @@ where
     type Output = Handle<T>;
 
     fn index(&self, index: T) -> &Self::Output {
-        self.get_handle(&index).expect("No handle is associated with index item")
+        self.get_handle(&index).expect("No handles is associated with index item")
     }
 }
 

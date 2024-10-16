@@ -1,16 +1,16 @@
-use crate::reader::address_based::{AddressBasedReader, AddressSpace};
+use crate::readers::address_based::{AddressBasedReader, AddressSpace};
 
-pub struct ByteAddressSpace {
+pub struct ByteArrayAddressSpace {
     data: Box<[u8]>,
 }
 
-impl ByteAddressSpace {
+impl ByteArrayAddressSpace {
     fn from_string(data: String) -> Self {
-        ByteAddressSpace { data: data.into_bytes().into_boxed_slice() }
+        ByteArrayAddressSpace { data: data.into_bytes().into_boxed_slice() }
     }
 }
 
-impl AddressSpace<u8> for ByteAddressSpace {
+impl AddressSpace<u8> for ByteArrayAddressSpace {
     fn read_at(&self, address: usize) -> Option<u8> {
         self.data.get(address).copied()
     }
@@ -20,11 +20,11 @@ impl AddressSpace<u8> for ByteAddressSpace {
     }
 }
 
-pub type ByteReader = AddressBasedReader<u8, ByteAddressSpace>;
+pub type ByteArrayReader = AddressBasedReader<u8, ByteArrayAddressSpace>;
 
-impl ByteReader {
-    pub fn from_string(data: String) -> ByteReader {
-        let address_space = ByteAddressSpace::from_string(data);
+impl ByteArrayReader {
+    pub fn from_string(data: String) -> ByteArrayReader {
+        let address_space = ByteArrayAddressSpace::from_string(data);
         AddressBasedReader::raw_new(address_space)
     }
 }
@@ -32,12 +32,12 @@ impl ByteReader {
 
 #[cfg(test)]
 mod tests {
-    use crate::reader::Reader;
+    use crate::readers::Reader;
     use super::*;
 
     #[test]
     fn test_reading() {
-        let mut reader = ByteReader::from_string("Hi, this is data".to_string());
+        let mut reader = ByteArrayReader::from_string("Hi, this is data".to_string());
         assert_eq!(reader.read_next(), Some('H' as u8));
         assert_eq!(reader.read_next(), Some('i' as u8));
         assert_eq!(reader.read_next(), Some(',' as u8));
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn test_sequence_extraction() {
-        let mut reader = ByteReader::from_string("Hi, this is data".to_string());
+        let mut reader = ByteArrayReader::from_string("Hi, this is data".to_string());
         reader.read_next();
         reader.read_next();
         reader.read_next();
@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_reset_to_tail() {
-        let mut reader = ByteReader::from_string("Hi, this is data".to_string());
+        let mut reader = ByteArrayReader::from_string("Hi, this is data".to_string());
         reader.set_tail();
         reader.read_next();
         reader.restart_from_tail();

@@ -1,5 +1,3 @@
-mod address_based;
-pub mod string_reader;
 
 pub trait Reader<T> {
     fn is_available(&self) -> bool;

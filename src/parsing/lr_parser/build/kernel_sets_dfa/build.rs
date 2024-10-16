@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use crate::automata::nfa::Nfa;
-use crate::handle::{Handle, Handled};
-use crate::handle::handle_map::HandleMap;
-use crate::handle::handled_vec::HandledVec;
-use crate::handle::order::OrderlyHandled;
+use crate::handles::collections::{HandledVec, HandleMap};
+use crate::handles::{Handle, Handled};
+use crate::handles::specials::OrderlyHandled;
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
 use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelSet, KernelSetsDfa};
 use crate::parsing::lr_parser::rules::{ProductionRule, GrammarSymbol};

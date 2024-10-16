@@ -1,10 +1,9 @@
 use crate::lex::Lexeme;
 
-use crate::lex::Regex;
-
 use crate::lex::LexemeDescriptor;
 use crate::lex::lexical_analyzer::LexicalAnalyzer;
-use crate::reader::string_reader::ByteReader;
+use crate::readers::ByteArrayReader;
+use crate::regex::Regex;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum TestLexemeType {
@@ -135,7 +134,7 @@ fn test_lexical_analyzer_on_string() {
     let lexical_analyzer = LexicalAnalyzer::new(lexeme_descriptors());
     let lexemes: Vec<Lexeme<TestLexemeType>> =
         lexical_analyzer
-            .analyze(&mut ByteReader::from_string(source_program_string().to_string()))
+            .analyze(&mut ByteArrayReader::from_string(source_program_string().to_string()))
             .collect();
     assert_eq!(lexemes, analyzed_program())
 }
@@ -146,6 +145,6 @@ fn test_lexical_error() {
     let lexical_analyzer = LexicalAnalyzer::new(vec![
         LexemeDescriptor::new((), Regex::single_char('+'))
     ]);
-    let _ = lexical_analyzer.analyze(&mut ByteReader::from_string("++-+".to_string()))
+    let _ = lexical_analyzer.analyze(&mut ByteArrayReader::from_string("++-+".to_string()))
         .collect::<Vec<Lexeme<()>>>();
 }

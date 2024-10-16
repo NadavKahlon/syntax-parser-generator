@@ -1,5 +1,4 @@
-use crate::handle::{Handle, Handled};
-use crate::handle::core::HandleCore;
+use crate::handles::{HandleCore, Handle, Handled};
 
 pub trait AutomaticallyHandled: Sized {
     type HandleCoreType: HandleCore;

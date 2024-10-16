@@ -1,4 +1,4 @@
-use crate::handle::{Handle, Handled};
+use crate::handles::{Handle, Handled};
 use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
 
 #[derive(Debug)]
@@ -82,7 +82,7 @@ where
             LrParserInternalDecision::Accept => {
                 panic!(
                     "LR parser should not have decided to accept on client's input, as it should \
-                    only accept on the end-of-marker terminal (mock handle) only known internally \
+                    only accept on the end-of-marker terminal (mock handles) only known internally \
                     to the parser"
                 )
             }
@@ -150,7 +150,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::handle::auto::AutomaticallyHandled;
+    use crate::handles::specials::AutomaticallyHandled;
     use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
     use crate::parsing::lr_parser::execute::tests::Production::{EIsT, FIsId, Mult, Paren, Sum, TIsF};
     use crate::parsing::lr_parser::LrParserAction::{Accept, Reduce, Shift};

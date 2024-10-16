@@ -1,4 +1,4 @@
-use syntax_parser_generator::handle::auto::AutomaticallyHandled;
+use syntax_parser_generator::handles::specials::AutomaticallyHandled;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CLexemeType {

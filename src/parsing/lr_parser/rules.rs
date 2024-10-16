@@ -1,6 +1,6 @@
 use derive_where::derive_where;
-use crate::handle::{Handle, Handled};
-use crate::handle::order::OrderlyHandled;
+use crate::handles::{Handle, Handled};
+use crate::handles::specials::OrderlyHandled;
 
 #[derive_where(Debug)]
 pub struct ProductionRule<Terminal, Nonterminal, Tag>

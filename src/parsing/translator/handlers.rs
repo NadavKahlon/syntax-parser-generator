@@ -1,5 +1,5 @@
-use crate::handle::Handled;
-use crate::handle::order::OrderlyHandled;
+use crate::handles::Handled;
+use crate::handles::specials::OrderlyHandled;
 
 pub(super) type LeafSatelliteBuilder<Context, Satellite> =
 Box<dyn Fn(&mut Context, String) -> Satellite>;

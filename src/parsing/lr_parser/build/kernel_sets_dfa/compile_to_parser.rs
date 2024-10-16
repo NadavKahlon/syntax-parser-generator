@@ -1,7 +1,6 @@
-use crate::handle::{Handle, Handled};
-use crate::handle::handle_map::HandleMap;
-use crate::handle::handled_vec::HandledVec;
-use crate::handle::order::OrderlyHandled;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
+use crate::handles::specials::OrderlyHandled;
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
 use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelSetsDfa, KernelSetsDfaState};
 use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};

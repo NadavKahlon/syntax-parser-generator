@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use crate::automata::dfa::{Dfa, DfaState};
 use crate::automata::nfa::{Nfa, NfaState};
-use crate::handle::handle_bit_set::HandleBitSet;
-use crate::handle::{Handle, Handled};
+use crate::handles::collections::HandleBitSet;
+use crate::handles::{Handle, Handled};
 
 impl<Symbol, Label> Nfa<Symbol, Label>
 where
@@ -126,8 +126,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::handles::specials::AutomaticallyHandled;
     use super::*;
-    use crate::handle::auto::AutomaticallyHandled;
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     enum Symbol {

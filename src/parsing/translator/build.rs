@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use crate::handle::{Handle, Handled};
-use crate::handle::auto::AutomaticallyHandled;
-use crate::handle::handle_map::HandleMap;
-use crate::handle::handled_vec::HandledVec;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
+use crate::handles::specials::AutomaticallyHandled;
 use crate::parsing::lr_parser::build::LrParserBuilder;
 use crate::parsing::lr_parser::rules::{Associativity, Binding, GrammarSymbol};
 use crate::parsing::translator::handlers::{LeafSatelliteBuilder, SatelliteReducer};
@@ -224,5 +223,5 @@ where
 }
 
 // Blank, don't really need to carry any info, Handle API is only used for counting registrations
-pub(super) struct Nonterminal;
+pub struct Nonterminal;
 impl Handled for Nonterminal { type HandleCoreType = u8; }

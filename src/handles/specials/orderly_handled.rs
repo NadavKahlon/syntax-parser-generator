@@ -1,7 +1,7 @@
 // TODO create a whole module for this, complete with explicit data structures
 
 use std::cmp::Ordering;
-use crate::handle::{Handle, Handled};
+use crate::handles::{Handle, Handled};
 
 pub trait OrderlyHandled: Handled {}
 

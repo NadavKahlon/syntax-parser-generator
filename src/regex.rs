@@ -1,6 +1,6 @@
 use crate::automata::nfa::{Nfa, NfaState};
-use crate::handle::Handle;
-use crate::handle::auto::AutomaticallyHandled;
+use crate::handles::Handle;
+use crate::handles::specials::AutomaticallyHandled;
 
 #[derive(Clone)]
 pub enum Regex {

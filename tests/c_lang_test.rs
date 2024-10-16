@@ -1,4 +1,4 @@
-use syntax_parser_generator::reader::string_reader::ByteReader;
+use syntax_parser_generator::readers::ByteArrayReader;
 use c_lang::lex::lexical_analyzer::CLexicalAnalyzer;
 use c_lang::parsing::ast;
 use c_lang::parsing::parser::CParser;
@@ -10,7 +10,7 @@ fn test_c_ast_pipeline() {
     let c_lexical_analyzer = CLexicalAnalyzer::new();
     let c_parser = CParser::new();
 
-    let mut source_reader = ByteReader::from_string(String::from(
+    let mut source_reader = ByteArrayReader::from_string(String::from(
         "\
         int main(int argc, int argv) { \
             int local; \

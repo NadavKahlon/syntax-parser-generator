@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
-use crate::handle::handle_bit_set::HandleBitSet;
-use crate::handle::Handled;
+use crate::handles::collections::handle_bit_set::HandleBitSet;
+use crate::handles::Handled;
 
 impl<T> HandleBitSet<T>
 where

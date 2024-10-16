@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use crate::handle::auto::AutomaticallyHandled;
-use crate::handle::handle_bit_set::HandleBitSet;
+use crate::handles::collections::handle_bit_set::HandleBitSet;
+use crate::handles::specials::AutomaticallyHandled;
 
 enum T {
     T1,

@@ -2,14 +2,13 @@ mod eq;
 
 #[cfg(test)]
 mod tests;
-pub mod iterators;
+mod iterators;
 
 use std::cmp::max;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use derive_where::derive_where;
-use crate::handle::{Handle, Handled};
-use crate::handle::core::HandleCore;
+use crate::handles::{Handle, HandleCore, Handled};
 
 #[derive_where(Clone)]
 pub struct HandleBitSet<T>

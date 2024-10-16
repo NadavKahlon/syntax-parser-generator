@@ -1,10 +1,8 @@
 use std::collections::HashSet;
 use std::fmt::Debug;
 use derive_where::derive_where;
-use crate::handle::handle_map::HandleMap;
-use crate::handle::{Handle, Handled};
-use crate::handle::handled_vec::HandledVec;
-
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
 
 #[derive_where(Debug, PartialEq, Eq; Label)]
 pub struct DfaState<Symbol, Label>
@@ -121,8 +119,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::handles::specials::AutomaticallyHandled;
     use super::*;
-    use crate::handle::auto::AutomaticallyHandled;
 
     #[derive(Clone, Copy)]
     enum Symbol {

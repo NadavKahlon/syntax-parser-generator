@@ -1,8 +1,6 @@
 use std::collections::HashSet;
-use crate::handle::{Handle, Handled};
-use crate::handle::handle_bit_set::HandleBitSet;
-use crate::handle::handle_map::HandleMap;
-use crate::handle::handled_vec::HandledVec;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandleBitSet, HandledVec, HandleMap};
 
 #[derive(Debug)]
 pub struct NfaState<Symbol, Label>
@@ -134,7 +132,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::handle::auto::AutomaticallyHandled;
+    use crate::handles::specials::AutomaticallyHandled;
     use super::*;
 
     #[derive(Clone, Copy)]

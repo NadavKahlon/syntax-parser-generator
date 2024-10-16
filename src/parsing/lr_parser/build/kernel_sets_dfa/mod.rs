@@ -6,9 +6,9 @@ mod firsts;
 use std::collections::HashSet;
 use derive_where::derive_where;
 use crate::automata::dfa::{Dfa, DfaState};
-use crate::handle::{Handle, Handled};
-use crate::handle::handled_vec::HandledVec;
-use crate::handle::order::OrderlyHandled;
+use crate::handles::{Handle, Handled};
+use crate::handles::collections::HandledVec;
+use crate::handles::specials::OrderlyHandled;
 use crate::parsing::lr_parser::rules::{GrammarSymbol, ProductionRule};
 
 pub type KernelSetsDfaState<Terminal, Nonterminal, Tag> =
