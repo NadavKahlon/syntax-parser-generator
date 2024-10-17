@@ -12,6 +12,11 @@ impl AutomaticallyHandled for u8 {
     fn serial(&self) -> usize { *self as usize }
 }
 
+/// A lexical analyzer.
+///
+/// A lexical analyzer is a computation unit (an automaton), that is capable of reading a stream
+/// of characters, and separating it into [Lexeme]s: atomic sequences units of meaningful text,
+/// tokens. See [crate::lex] for more detail.
 pub struct LexicalAnalyzer<LexemeType>
 {
     dfa: Dfa<u8, LexemeType>,
@@ -22,6 +27,10 @@ impl<LexemeType> LexicalAnalyzer<LexemeType>
 where
     LexemeType: Hash + Eq + Clone,
 {
+    /// Builds a new [LexicalAnalyzer].
+    ///
+    /// The different `LexemeType`s that the analyzer will be capable of recognizing are described
+    /// by `lexeme_descriptors`.
     pub fn new(lexeme_descriptors: Vec<LexemeDescriptor<LexemeType>>) -> LexicalAnalyzer<LexemeType>
     {
         let mut nfa = Nfa::new();
@@ -64,6 +73,20 @@ where
         LexicalAnalyzer { dfa }
     }
 
+    /// Parses a stream of input text specified by a `reader`, and yields the lexemes it is consists
+    /// of.
+    ///
+    /// # Conflict Resolution
+    ///
+    /// - Longer lexemes are prioritized.
+    /// - Among the matching `LexemeType`s for a lexeme of a given length, priority is given to the
+    ///     `LexemeType` whose [LexemeDescriptor] was listed first during the [LexicalAnalyzer]'s
+    ///     construction (see the `lexeme_descriptors` argument of [LexicalAnalyzer::new]).
+    ///
+    /// # Panics
+    ///
+    /// If no known `LexemeType` could be matched against a prefix of the remaining input.
+    ///
     pub fn analyze<'a>(&'a self, reader: &'a mut impl Reader<u8>)
                        -> impl Iterator<Item=Lexeme<LexemeType>> + 'a
     {
