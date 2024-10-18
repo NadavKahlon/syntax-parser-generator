@@ -1,11 +1,17 @@
 use std::marker::PhantomData;
 use crate::readers::Reader;
 
+/// A sequence of items that can be accessed by conceptual addresses.
+///
+/// The first item's address should be 0.
 pub trait AddressSpace<T> {
+    /// Get the item in a given address.
+    ///
+    /// If no item is available at that address, [None] is returned.
     fn read_at(&self, address: usize) -> Option<T>;
-    fn is_available(&self, address: usize) -> bool;
 }
 
+/// A [Reader] implementation that's based on an [AddressSpace] of the read items.
 pub struct AddressBasedReader<T, AddressSpaceType>
 where
     AddressSpaceType: AddressSpace<T>,
@@ -21,6 +27,7 @@ impl<T, AddressSpaceType> AddressBasedReader<T, AddressSpaceType>
 where
     AddressSpaceType: AddressSpace<T>,
 {
+    /// Create a new reader over the items in the given address space.
     pub fn raw_new(address_space: AddressSpaceType) -> Self {
         Self {
             address_space,
@@ -36,10 +43,6 @@ impl<T, AddressSpaceType> Reader<T> for AddressBasedReader<T, AddressSpaceType>
 where
     AddressSpaceType: AddressSpace<T>,
 {
-    fn is_available(&self) -> bool {
-        self.address_space.is_available(self.cursor_address)
-    }
-
     fn read_next(&mut self) -> Option<T> {
         let result = self.address_space.read_at(self.cursor_address)?;
         self.cursor_address += 1;
