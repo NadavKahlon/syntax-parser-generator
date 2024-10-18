@@ -7,7 +7,7 @@
 //! Lexemes are usually classified into categories, or _lexeme types_, that identify "groups" of
 //! lexemes that have similar syntactic meaning: identifier, integer literal, operator, white
 //! space, etc. Each category is specified by a [LexemeDescriptor], which defines the
-//! [regex](crate::regex::Regex) pattern that matches lexemes of that type.
+//! [regex](regex::Regex) pattern that matches lexemes of that type.
 //!
 //! Finally, the computational unit responsible for extracting the lexemes that a given input text
 //! consists of is known as a [lexical analyzer](LexicalAnalyzer), and is compiled from a set of
@@ -17,7 +17,7 @@
 //! ```rust
 //! # use syntax_parser_generator::lex::*;
 //! # use syntax_parser_generator::readers::ByteArrayReader;
-//! # use syntax_parser_generator::regex::Regex;
+//! # use syntax_parser_generator::lex::Regex;
 //! # #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 //! # enum MyLexemeType { Integer, Addition, NotANumber }
 //! let lexical_analyzer = LexicalAnalyzer::new(vec![
@@ -54,6 +54,10 @@
 //! ];
 //! assert_eq!(extracted_lexemes.collect::<Vec<Lexeme<MyLexemeType>>>(), actual_lexemes);
 //! ```
+
+mod regex;
+pub use regex::Regex;
+
 
 mod lexeme;
 pub use lexeme::{Lexeme, LexemeDescriptor};

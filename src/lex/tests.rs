@@ -3,7 +3,7 @@ use crate::lex::Lexeme;
 use crate::lex::LexemeDescriptor;
 use crate::lex::lexical_analyzer::LexicalAnalyzer;
 use crate::readers::ByteArrayReader;
-use crate::regex::Regex;
+use crate::lex::regex::Regex;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum TestLexemeType {

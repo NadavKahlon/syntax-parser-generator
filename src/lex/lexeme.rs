@@ -1,4 +1,4 @@
-use crate::regex::Regex;
+use crate::lex::regex::Regex;
 
 /// Describes a category of lexemes with similar syntactic meanings.
 ///
