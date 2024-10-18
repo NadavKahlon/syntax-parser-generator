@@ -1,10 +1,8 @@
-//! Build regular-expressions.
-
 use crate::automata::nfa::{Nfa, NfaState};
 use crate::handles::Handle;
 use crate::handles::specials::AutomaticallyHandled;
 
-/// Represents a regular-expression pattern, over raw bytes.
+/// A regular-expression pattern over raw bytes.
 ///
 /// In practice, you won't need to create instances of this type directly. Check out the [Regex]
 /// API and the high-level factory methods it offers.
