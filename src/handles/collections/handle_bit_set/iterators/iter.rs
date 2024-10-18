@@ -1,18 +1,19 @@
-use crate::handles::collections::handle_bit_set::HandleBitSet;
 use crate::handles::{Handle, HandleCore, Handled};
+use crate::handles::collections::handle_bit_set::HandleBitSet;
 
 impl<T> HandleBitSet<T>
 where
     T: Handled,
 {
-    pub fn iter(&self) -> Iter<T> {
+    /// Get an iterator over the handles in the set.
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item=Handle<T>> + 'a {
         Iter::new(self)
     }
 }
 
 impl<'a, T> IntoIterator for &'a HandleBitSet<T>
 where
-    T: Handled
+    T: Handled,
 {
     type Item = Handle<T>;
     type IntoIter = Iter<'a, T>;
@@ -22,6 +23,7 @@ where
     }
 }
 
+/// An iterator over handles in a [HandleBitSet].
 pub struct Iter<'a, T>
 where
     T: Handled,
