@@ -1,8 +1,38 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+
 use derive_where::derive_where;
+
 use crate::handles::{Handle, Handled};
 
+/// An efficient implementation of a mapping between handles and arbitrary data.
+///
+/// This collection implements the classic "map" data-structure functionality, in the special case
+/// in which the keys are actually instances of [Handle]. This restriction enables this more
+/// efficient implementation of a map.
+///
+/// # Type Arguments
+///
+/// * `T`: The [Handled] type whose handles are used to index into the map.
+/// * `U`: The type of the target values being mapped.
+///
+/// # Example
+/// ```rust
+/// # use syntax_parser_generator::handles::{Handle, Handled};
+/// # use syntax_parser_generator::handles::collections::{HandledVec, HandleMap};
+/// struct LinkedListNode { next: Option<Handle<LinkedListNode>> }
+/// impl Handled for LinkedListNode { type HandleCoreType = u8; }
+///
+/// let mut nodes = HandledVec::new();
+/// let tail_handle = nodes.insert(LinkedListNode { next: None });
+/// let head_handle = nodes.insert(LinkedListNode { next: Some(tail_handle) });
+///
+/// let mut metadata = HandleMap::new();
+/// metadata.insert(head_handle, "Head Node");
+/// metadata.insert(tail_handle, "Tail Node");
+///
+/// assert_eq!(metadata.get(tail_handle), Some("Tail Node").as_ref());
+/// ```
 // TODO "complete map", where everything is known (no "Option<U>", just U). Why? to half tne space
 #[derive_where(PartialEq, Eq, Clone; U)]
 pub struct HandleMap<T, U>
@@ -17,10 +47,12 @@ impl<T, U> HandleMap<T, U>
 where
     T: Handled + ?Sized,
 {
+    /// Create a new, empty, map.
     pub fn new() -> Self {
         Vec::new().into()
     }
 
+    /// Insert a key-value pair to the map.
     pub fn insert(&mut self, key: Handle<T>, item: U) -> bool {
         let result = self.get(key).is_none();
         if key.index() >= self.contents.len() {
@@ -30,24 +62,41 @@ where
         result
     }
 
+    /// Get a reference to the value mapped to a given key, or [None] if the key is not present.
     pub fn get(&self, key: Handle<T>) -> Option<&U> {
         self.contents.get(key.index())?.as_ref()
     }
 
+    /// Get a mutable reference to the value mapped to a given key, or [None] if the key was never
+    /// inserted.
     pub fn get_mut(&mut self, key: Handle<T>) -> Option<&mut U> {
         self.contents.get_mut(key.index())?.as_mut()
     }
 
+    /// Check whether a given key is present in the map.
     pub fn contains_key(&self, key: Handle<T>) -> bool {
         !self.get(key).is_none()
     }
 
-    pub fn iter(&self) -> Iter<T, U> {
+    /// Get an iterator of references to the values held in the maps, and their corresponding keys.
+    pub fn iter(&self) -> impl Iterator<Item=(Handle<T>, &U)> {
         (&self).into_iter()
     }
 
+    /// Get an iterator over the available keys in the map.
     pub fn keys<'a>(&'a self) -> impl Iterator<Item=Handle<T>> + 'a {
         self.iter().map(|(key, _)| key)
+    }
+}
+
+impl<T, U> Debug for HandleMap<T, U>
+where
+    T: Handled,
+    U: Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.iter().collect::<Vec<(Handle<T>, &U)>>()
+            .fmt(f)
     }
 }
 
@@ -75,6 +124,7 @@ where
     }
 }
 
+/// An iterator over references to [HandleMap] values, and their keys.
 pub struct Iter<'a, T, U>
 where
     T: Handled + ?Sized,
@@ -154,15 +204,3 @@ mod tests {
         )
     }
 }
-
-impl<T, U> Debug for HandleMap<T, U>
-where
-    T: Handled,
-    U: Debug,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.iter().collect::<Vec<(Handle<T>, &U)>>()
-            .fmt(f)
-    }
-}
-
