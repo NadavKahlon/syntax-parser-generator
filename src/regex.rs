@@ -1,16 +1,46 @@
+//! Build regular-expressions.
+
 use crate::automata::nfa::{Nfa, NfaState};
 use crate::handles::Handle;
 use crate::handles::specials::AutomaticallyHandled;
 
+/// Represents a regular-expression pattern, over raw bytes.
+///
+/// In practice, you won't need to create instances of this type directly. Check out the [Regex]
+/// API and the high-level factory methods it offers.
 #[derive(Clone)]
 pub enum Regex {
-    SingleCharacter { value: u8 },
-    Union { options: Vec<Regex> },
-    Concat { parts: Vec<Regex> },
-    Star { repeated_pattern: Box<Regex> },
+    /// Only matches a single hardcoded byte.
+    SingleCharacter {
+        /// The matching byte.
+        value: u8,
+    },
+
+    /// Matches each one of the specified patterns.
+    Union {
+        /// The possible matching patterns.
+        options: Vec<Regex>,
+    },
+
+    /// Matches a concatenation of the specified patterns.
+    Concat {
+        /// The concatenated patterns.
+        parts: Vec<Regex>,
+    },
+
+    /// Matches a concatenation of zero or more repetitions of the specified pattern.
+    Star {
+        /// The repeated pattern.
+        repeated_pattern: Box<Regex>,
+    },
 }
 
 impl Regex {
+    /// Creates a pattern that only matches the specified character.
+    ///
+    /// # Panics
+    ///
+    /// If the character is not ASCII (cannot be represented by a single byte).
     pub fn single_char(value: char) -> Regex {
         Regex::SingleCharacter {
             value: value.try_into().unwrap_or_else(|_| panic!(
@@ -19,18 +49,22 @@ impl Regex {
         }
     }
 
+    /// Creates a pattern that matches each of the specified patterns.
     pub fn union(options: Vec<Regex>) -> Regex {
         Regex::Union { options }
     }
 
+    /// Creates a pattern that matches a concatenation of the specified patterns.
     pub fn concat(parts: Vec<Regex>) -> Regex {
         Regex::Concat { parts }
     }
 
+    /// Creates a pattern that matches zero or more repetitions of the specified pattern.
     pub fn star_from(repeated_pattern: Regex) -> Regex {
         Regex::Star { repeated_pattern: Box::new(repeated_pattern) }
     }
 
+    /// Creates a pattern that matches one or more repetitions of the specified pattern.
     pub fn plus_from(repeated_pattern: Regex) -> Regex {
         let star_pattern = Regex::star_from(repeated_pattern.clone());
         Regex::concat(vec![
@@ -39,6 +73,7 @@ impl Regex {
         ])
     }
 
+    /// Creates a pattern that matches a single white-space character.
     pub fn white_space() -> Regex {
         let white_space_characters = vec![' ', '\t', '\n', '\r', '\x0B', '\x0C'];
         Regex::union(
@@ -49,6 +84,7 @@ impl Regex {
         )
     }
 
+    /// Creates a pattern that matches a hard-coded sequence of characters.
     pub fn constant_string(string: &str) -> Regex {
         Regex::concat(
             string
@@ -58,6 +94,8 @@ impl Regex {
         )
     }
 
+    /// Creates a pattern that matches any single character between the specified couple of
+    /// characters (inclusive).
     pub fn character_range(start: char, end: char) -> Regex {
         Regex::union(
             (start..=end)
@@ -66,6 +104,7 @@ impl Regex {
         )
     }
 
+    /// Creates a pattern that matches the specified pattern, and an empty sequence of bytes.
     pub fn optional(option: Regex) -> Regex {
         Regex::union(vec![
             option,
@@ -73,11 +112,12 @@ impl Regex {
         ])
     }
 
+    /// Creates a pattern that only matches an empty sequence of characters.
     pub fn epsilon() -> Regex {
         Regex::concat(vec![])
     }
 
-    pub fn build_into_nfa<Label>(
+    pub(crate) fn build_into_nfa<Label>(
         &self, nfa: &mut Nfa<u8, Label>,
     ) -> (Handle<NfaState<u8, Label>>, Handle<NfaState<u8, Label>>)
     where
@@ -133,6 +173,7 @@ impl Regex {
 #[cfg(test)]
 mod tests {
     use crate::automata::dfa::Dfa;
+
     use super::*;
 
     fn create_dfa_for_regex(pattern: Regex) -> Dfa<u8, ()> {
