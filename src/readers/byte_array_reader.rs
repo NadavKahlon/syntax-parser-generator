@@ -14,15 +14,15 @@ impl AddressSpace<u8> for ByteArrayAddressSpace {
     fn read_at(&self, address: usize) -> Option<u8> {
         self.data.get(address).copied()
     }
-
-    fn is_available(&self, address: usize) -> bool {
-        address < self.data.len()
-    }
 }
 
+/// Implementation of the [Reader](crate::readers::Reader) interface for accessing an in-memory
+/// array of bytes.
 pub type ByteArrayReader = AddressBasedReader<u8, ByteArrayAddressSpace>;
 
 impl ByteArrayReader {
+    /// Creates a new [Reader](crate::readers::Reader) for accessing the sequence of bytes in a
+    /// given [String].
     pub fn from_string(data: String) -> ByteArrayReader {
         let address_space = ByteArrayAddressSpace::from_string(data);
         AddressBasedReader::raw_new(address_space)
