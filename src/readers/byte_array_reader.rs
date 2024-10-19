@@ -27,6 +27,12 @@ impl ByteArrayReader {
         let address_space = ByteArrayAddressSpace::from_string(data);
         AddressBasedReader::raw_new(address_space)
     }
+
+    /// Creates a new [Reader](crate::readers::Reader) for accessing the sequence of bytes in a
+    /// string, copied from the given string-slice.
+    pub fn from_string_slice(data: &str) -> Self {
+        Self::from_string(String::from(data))
+    }
 }
 
 
