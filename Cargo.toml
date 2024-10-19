@@ -1,8 +1,14 @@
 [package]
 name = "syntax-parser-generator"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+description = "Independent library for generating lexical-analyzers and LALR parsers"
+authors = ["Nadav Kahlon <nadavkahlon100@gmail.com>"]
+repository = "https://github.com/NadavKahlon/syntax-parser-generator"
+license = "MIT"
 
 [dependencies]
 derive-where = "1.2.7"
+
+[dev-dependencies]
 pretty_assertions = "=1.4.0"
