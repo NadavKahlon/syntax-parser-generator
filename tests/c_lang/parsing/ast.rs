@@ -10,7 +10,7 @@ pub enum GlobalStatement {
         retval_dtype: Box<Dtype>,
         formal_args: Vec<Box<FormalArg>>,
         body: Box<LocalStatement>,
-    }
+    },
 }
 
 #[derive(Debug, PartialEq)]
@@ -26,23 +26,43 @@ pub struct FormalArg {
 
 #[derive(Debug, PartialEq)]
 pub enum LocalStatement {
-    VariableDeclaration { name: String, dtype: Box<Dtype> },
-    Evaluation { expression: Box<Expression> },
-    Block { statements: Vec<Box<LocalStatement>> },
-    If { condition: Box<Expression>, true_branch: Box<LocalStatement> },
+    VariableDeclaration {
+        name: String,
+        dtype: Box<Dtype>,
+    },
+    Evaluation {
+        expression: Box<Expression>,
+    },
+    Block {
+        statements: Vec<Box<LocalStatement>>,
+    },
+    If {
+        condition: Box<Expression>,
+        true_branch: Box<LocalStatement>,
+    },
     IfElse {
         condition: Box<Expression>,
         true_branch: Box<LocalStatement>,
         false_branch: Box<LocalStatement>,
     },
-    While { condition: Box<Expression>, body: Box<LocalStatement> },
+    While {
+        condition: Box<Expression>,
+        body: Box<LocalStatement>,
+    },
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
-    IntLiteral { value: i128 },
-    Variable { name: String },
-    Assignment { lhs: Box<LValue>, rhs: Box<Expression> },
+    IntLiteral {
+        value: i128,
+    },
+    Variable {
+        name: String,
+    },
+    Assignment {
+        lhs: Box<LValue>,
+        rhs: Box<Expression>,
+    },
 }
 
 #[derive(Debug, PartialEq)]

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandledVec, HandleMap};
 use crate::handles::specials::AutomaticallyHandled;
@@ -69,7 +70,8 @@ where
 {
     grammar_symbol_dub_map: HashMap<String, GrammarSymbol<LexemeType, Nonterminal>>,
     nonterminals: HandledVec<Nonterminal>,
-    lr_parser_builder: LrParserBuilder<LexemeType, Nonterminal, SatelliteReducer<Context, Satellite>>,
+    lr_parser_builder:
+        LrParserBuilder<LexemeType, Nonterminal, SatelliteReducer<Context, Satellite>>,
     bindings_dub_map: HashMap<String, Handle<Binding<LexemeType>>>,
     leaf_satellite_builder_map: HandleMap<LexemeType, LeafSatelliteBuilder<Context, Satellite>>,
     default_leaf_satellite_builder: Option<LeafSatelliteBuilder<Context, Satellite>>,
@@ -105,11 +107,14 @@ where
         if self.grammar_symbol_dub_map.contains_key(dub) {
             panic!(
                 "Tried to dub a lexeme type {:?}, which is already used to dub another \
-                grammar symbol", dub,
+                grammar symbol",
+                dub,
             )
         }
-        self.grammar_symbol_dub_map
-            .insert(String::from(dub), GrammarSymbol::Terminal(lexeme_type.handle()));
+        self.grammar_symbol_dub_map.insert(
+            String::from(dub),
+            GrammarSymbol::Terminal(lexeme_type.handle()),
+        );
     }
 
     /// Dub multiple categories of lexemes at once.
@@ -117,7 +122,10 @@ where
     /// # Panics
     ///
     /// If a new dub is already used to dub another grammar symbol.
-    pub fn dub_lexeme_types<'a>(&mut self, lexeme_type_dubs: impl Iterator<Item=(LexemeType, &'a str)>) {
+    pub fn dub_lexeme_types<'a>(
+        &mut self,
+        lexeme_type_dubs: impl Iterator<Item=(LexemeType, &'a str)>,
+    ) {
         for (lexeme_type, dub) in lexeme_type_dubs {
             self.dub_lexeme_type(lexeme_type, dub);
         }
@@ -132,11 +140,13 @@ where
         if self.grammar_symbol_dub_map.contains_key(dub) {
             panic!(
                 "Tried to create a new nonterminal dubbed {:?}, which is already used to dub \
-                another grammar symbol", dub,
+                another grammar symbol",
+                dub,
             )
         }
         let nonterminal = self.nonterminals.insert(Nonterminal);
-        self.grammar_symbol_dub_map.insert(String::from(dub), GrammarSymbol::Nonterminal(nonterminal));
+        self.grammar_symbol_dub_map
+            .insert(String::from(dub), GrammarSymbol::Nonterminal(nonterminal));
     }
 
     /// Create multiple nonterminals at once, associated with the given dubs.
@@ -192,20 +202,27 @@ where
         if self.bindings_dub_map.contains_key(binding_dub) {
             panic!(
                 "Tried to create a new binding dubbed {:?}, which is already used to dub an \
-                existing binding", binding_dub,
+                existing binding",
+                binding_dub,
             )
         }
-        let terminals = bound_lexeme_types_dubs.iter()
-            .map(|&lexeme_type_dub| match self.grammar_symbol_dub_map.get(lexeme_type_dub) {
-                Some(GrammarSymbol::Terminal(terminal)) => *terminal,
-                _ => panic!(
-                    "Tried to create a binding dubbed {:?} , bound to a non-existing \
-                        lexeme type dubbed {:?}", binding_dub, lexeme_type_dub,
-                ),
-            }).collect();
+        let terminals = bound_lexeme_types_dubs
+            .iter()
+            .map(
+                |&lexeme_type_dub| match self.grammar_symbol_dub_map.get(lexeme_type_dub) {
+                    Some(GrammarSymbol::Terminal(terminal)) => *terminal,
+                    _ => panic!(
+                        "Tried to create a binding dubbed {:?} , bound to a non-existing \
+                        lexeme type dubbed {:?}",
+                        binding_dub, lexeme_type_dub,
+                    ),
+                },
+            )
+            .collect();
         self.bindings_dub_map.insert(
             String::from(binding_dub),
-            self.lr_parser_builder.register_binding(terminals, associativity),
+            self.lr_parser_builder
+                .register_binding(terminals, associativity),
         );
     }
 
@@ -222,15 +239,16 @@ where
     where
         F: Fn(&mut Context, String) -> Satellite + 'static,
     {
-        let lexeme_type =
-            match self.grammar_symbol_dub_map.get(lexeme_type_dub) {
-                Some(GrammarSymbol::Terminal(lexeme_type)) => *lexeme_type,
-                _ => panic!(
-                    "Tried to set a leaf satellite builder for a non-existing lexeme type dubbed \
-                    {:?}", lexeme_type_dub,
-                )
-            };
-        self.leaf_satellite_builder_map.insert(lexeme_type, Box::new(builder));
+        let lexeme_type = match self.grammar_symbol_dub_map.get(lexeme_type_dub) {
+            Some(GrammarSymbol::Terminal(lexeme_type)) => *lexeme_type,
+            _ => panic!(
+                "Tried to set a leaf satellite builder for a non-existing lexeme type dubbed \
+                    {:?}",
+                lexeme_type_dub,
+            ),
+        };
+        self.leaf_satellite_builder_map
+            .insert(lexeme_type, Box::new(builder));
     }
 
     /// Set a leaf-satellite builder to process lexeme types for which no builder was set with
@@ -256,12 +274,8 @@ where
     /// # Panics
     ///
     /// If any the given dubs isn't known as a matching dub.
-    pub fn register_rule<F>(
-        &mut self,
-        lhs: &str,
-        rhs: Vec<&str>,
-        satellite_reducer: F,
-    ) where
+    pub fn register_rule<F>(&mut self, lhs: &str, rhs: Vec<&str>, satellite_reducer: F)
+    where
         F: Fn(&mut Context, Vec<Satellite>) -> Satellite + 'static,
     {
         self.register_rule_raw(lhs, rhs, None, satellite_reducer);
@@ -301,15 +315,13 @@ where
     ///
     /// If any the given dubs isn't known as a matching dub.
     pub fn register_identity_rule(&mut self, lhs: &str, rhs: &str) {
-        self.register_rule(
-            lhs,
-            vec![rhs],
-            |_context, mut satellites| satellites.pop().expect(
+        self.register_rule(lhs, vec![rhs], |_context, mut satellites| {
+            satellites.pop().expect(
                 "Tried to reduce satellites using `identity_satellite_reducer`, but the \
                 provided RHS satellite list is empty (it should contain a single satellite for the \
-                single item in the RHS)"
-            ),
-        );
+                single item in the RHS)",
+            )
+        });
     }
 
     /// Register a production rule whose RHS is empty.
@@ -331,11 +343,9 @@ where
     where
         F: Fn(&mut Context) -> Satellite + 'static,
     {
-        self.register_rule(
-            lhs,
-            vec![],
-            move |context, _satellites| default_satellite_builder(context),
-        )
+        self.register_rule(lhs, vec![], move |context, _satellites| {
+            default_satellite_builder(context)
+        })
     }
 
     fn register_rule_raw<F>(
@@ -351,23 +361,28 @@ where
             Some(GrammarSymbol::Nonterminal(nonterminal)) => *nonterminal,
             _ => panic!(
                 "Tried to register a production rule whose LHS is a non-existing nonterminal \
-                dubbed {:?}", lhs_dub,
+                dubbed {:?}",
+                lhs_dub,
             ),
         };
-        let rhs =
-            rhs_dubs.iter().map(|&dub| match self.grammar_symbol_dub_map.get(dub) {
+        let rhs = rhs_dubs
+            .iter()
+            .map(|&dub| match self.grammar_symbol_dub_map.get(dub) {
                 Some(&grammar_symbol) => grammar_symbol,
                 _ => panic!(
                     "Tried to register a production rule whose RHS contains non-existing grammar \
-                symbol dubbed {:?}", dub,
-                )
-            }).collect();
+                symbol dubbed {:?}",
+                    dub,
+                ),
+            })
+            .collect();
         let binding = binding_dub.map(|actual_binding_dub| {
             match self.bindings_dub_map.get(actual_binding_dub) {
                 Some(&binding) => binding,
                 None => panic!(
                     "Tried to register a production rule bound to a non-existing binding dubbed \
-                    {:?}", actual_binding_dub,
+                    {:?}",
+                    actual_binding_dub,
                 ),
             }
         });
@@ -388,4 +403,6 @@ where
 
 // Blank, don't really need to carry any info, Handle API is only used for counting registrations
 pub struct Nonterminal;
-impl Handled for Nonterminal { type HandleCoreType = u8; }
+impl Handled for Nonterminal {
+    type HandleCoreType = u8;
+}

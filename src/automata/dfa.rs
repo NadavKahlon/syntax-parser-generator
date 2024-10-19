@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 use std::fmt::Debug;
+
 use derive_where::derive_where;
+
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandledVec, HandleMap};
 
@@ -28,7 +30,9 @@ where
 impl<Symbol, Label> Handled for DfaState<Symbol, Label>
 where
     Symbol: Handled,
-{ type HandleCoreType = u16; }
+{
+    type HandleCoreType = u16;
+}
 
 #[derive_where(Debug; Label: Debug)]
 #[derive_where(PartialEq; Label: PartialEq)]
@@ -37,7 +41,7 @@ pub struct Dfa<Symbol, Label>
 where
     Symbol: Handled,
 {
-    pub(super) states: HandledVec<DfaState<Symbol, Label>>,  // TODO space efficienct
+    pub(super) states: HandledVec<DfaState<Symbol, Label>>, // TODO space efficienct
     pub(super) initial_state: Option<Handle<DfaState<Symbol, Label>>>,
 }
 
@@ -77,7 +81,9 @@ where
     }
 
     pub fn link(
-        &mut self, src: Handle<DfaState<Symbol, Label>>, dst: Handle<DfaState<Symbol, Label>>,
+        &mut self,
+        src: Handle<DfaState<Symbol, Label>>,
+        dst: Handle<DfaState<Symbol, Label>>,
         symbol: Handle<Symbol>,
     ) {
         self.states[src].transitions.insert(symbol, dst);
@@ -96,31 +102,32 @@ where
     }
 
     pub fn step(
-        &self, src: Handle<DfaState<Symbol, Label>>, symbol: Handle<Symbol>,
+        &self,
+        src: Handle<DfaState<Symbol, Label>>,
+        symbol: Handle<Symbol>,
     ) -> Option<Handle<DfaState<Symbol, Label>>> {
         self.states[src].transitions.get(symbol).copied()
     }
 
-    #[allow(dead_code)]  // It is used for internal unit-testing
+    #[allow(dead_code)] // It is used for internal unit-testing
     pub fn scan(
-        &self, stream: impl Iterator<Item=Handle<Symbol>>,
+        &self,
+        stream: impl Iterator<Item=Handle<Symbol>>,
     ) -> Option<Handle<DfaState<Symbol, Label>>> {
-        stream
-            .fold(
-                self.initial_state,
-                |optional_state, symbol| {
-                    match optional_state {
-                        None => None,
-                        Some(state) => self.step(state, symbol)
-                    }
-                },
-            )
+        stream.fold(
+            self.initial_state,
+            |optional_state, symbol| match optional_state {
+                None => None,
+                Some(state) => self.step(state, symbol),
+            },
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::handles::specials::AutomaticallyHandled;
+
     use super::*;
 
     #[derive(Clone, Copy)]
@@ -130,7 +137,9 @@ mod tests {
     }
     impl AutomaticallyHandled for Symbol {
         type HandleCoreType = u8;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
 
     fn build_test_data_1() -> (Dfa<Symbol, u32>, Vec<Handle<DfaState<Symbol, u32>>>) {
@@ -203,4 +212,3 @@ mod tests {
         assert_eq!(dfa.scan(input_string_bad.into_iter()), None);
     }
 }
-

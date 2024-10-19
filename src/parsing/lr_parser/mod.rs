@@ -1,11 +1,12 @@
-pub mod execute;
-pub mod build;
-pub mod rules;
-
 use derive_where::derive_where;
+
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandledVec, HandleMap};
 use crate::parsing::lr_parser::execute::LrParserExecution;
+
+pub mod build;
+pub mod execute;
+pub mod rules;
 
 #[derive(Clone, Copy)]
 #[derive_where(Debug)]
@@ -51,8 +52,7 @@ where
     }
 }
 
-impl<Terminal, Nonterminal, Tag> Handled
-for LrParserState<Terminal, Nonterminal, Tag>
+impl<Terminal, Nonterminal, Tag> Handled for LrParserState<Terminal, Nonterminal, Tag>
 where
     Terminal: Handled,
     Nonterminal: Handled,
@@ -92,14 +92,17 @@ where
     }
 
     fn set_action(
-        &mut self, state: Handle<LrParserState<Terminal, Nonterminal, Tag>>,
-        terminal: Handle<Terminal>, action: LrParserAction<Terminal, Nonterminal, Tag>,
+        &mut self,
+        state: Handle<LrParserState<Terminal, Nonterminal, Tag>>,
+        terminal: Handle<Terminal>,
+        action: LrParserAction<Terminal, Nonterminal, Tag>,
     ) {
         self.states[state].action_map.insert(terminal, action);
     }
 
     fn set_goto(
-        &mut self, state: Handle<LrParserState<Terminal, Nonterminal, Tag>>,
+        &mut self,
+        state: Handle<LrParserState<Terminal, Nonterminal, Tag>>,
         nonterminal: Handle<Nonterminal>,
         target: Handle<LrParserState<Terminal, Nonterminal, Tag>>,
     ) {
@@ -110,9 +113,7 @@ where
         LrParserExecution::new(self)
     }
 
-    fn set_initial_state(
-        &mut self, state: Handle<LrParserState<Terminal, Nonterminal, Tag>>
-    ) {
+    fn set_initial_state(&mut self, state: Handle<LrParserState<Terminal, Nonterminal, Tag>>) {
         self.initial_state = Some(state)
     }
 

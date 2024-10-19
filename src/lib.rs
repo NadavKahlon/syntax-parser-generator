@@ -122,8 +122,8 @@
 
 #![warn(missing_docs)]
 
-pub mod readers;
+mod automata;
+pub mod handles;
 pub mod lex;
 pub mod parsing;
-pub mod handles;
-mod automata;
+pub mod readers;

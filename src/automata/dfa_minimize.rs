@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::hash::Hash;
+
 use derive_where::derive_where;
+
 use crate::automata::dfa::{Dfa, DfaState};
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandledVec, HandleMap};
@@ -32,8 +34,8 @@ where
         let dead_state = self.locate_dead_state();
 
         let mut new_dfa = Dfa::new();
-        let mut states_map: HandleMap<DfaState<Symbol, Label>, Handle<DfaState<Symbol, Label>>>
-            = HandleMap::new();
+        let mut states_map: HandleMap<DfaState<Symbol, Label>, Handle<DfaState<Symbol, Label>>> =
+            HandleMap::new();
 
         for state in self.states.list_handles() {
             if Some(state) != dead_state {
@@ -44,9 +46,9 @@ where
         }
 
         if let Some(origin_initial_state) = self.initial_state {
-            let &initial_state = states_map.get(origin_initial_state).expect(
-                "DFA cannot be reduced from its dead state if it's the initial state"
-            );
+            let &initial_state = states_map
+                .get(origin_initial_state)
+                .expect("DFA cannot be reduced from its dead state if it's the initial state");
             new_dfa.set_initial_state(initial_state);
         }
 
@@ -57,7 +59,7 @@ where
                     if Some(origin_tar) != dead_state {
                         let &tar = states_map.get(origin_tar).expect(
                             "Every non-dead state in the original DFA should be associated \
-                            with some state in the new DFA"
+                            with some state in the new DFA",
                         );
                         new_dfa.link(src, tar, symbol);
                     }
@@ -75,11 +77,11 @@ where
     }
 
     fn is_dead_state(&self, state: Handle<DfaState<Symbol, Label>>) -> bool {
-        self.get_label(state).is_none() &&
-            self.states[state].transitions.iter()
-                .all(|(_, &target)| {
-                    state == target
-                })
+        self.get_label(state).is_none()
+            && self.states[state]
+            .transitions
+            .iter()
+            .all(|(_, &target)| state == target)
     }
 }
 
@@ -90,7 +92,7 @@ where
 {
     dfa: Dfa<Symbol, Label>,
     equivalence_sets: HandledVec<EquivalenceSet<Symbol, Label>>,
-    equivalence_map: HandleMap<DfaState<Symbol, Label>, Handle<EquivalenceSet<Symbol, Label>>, >,
+    equivalence_map: HandleMap<DfaState<Symbol, Label>, Handle<EquivalenceSet<Symbol, Label>>>,
     symbols: Vec<Handle<Symbol>>,
 }
 
@@ -125,21 +127,32 @@ where
         }
 
         let symbols = dfa.list_symbols().collect();
-        Self { dfa, equivalence_sets, equivalence_map, symbols }
+        Self {
+            dfa,
+            equivalence_sets,
+            equivalence_map,
+            symbols,
+        }
     }
 
     fn minimize(mut self) -> Dfa<Symbol, Label> {
-        while self.equivalence_sets.clone().list_handles()
+        while self
+            .equivalence_sets
+            .clone()
+            .list_handles()
             .map(|set| self.split_equivalence_set(set))
-            .collect::<Vec<bool>>().iter()
+            .collect::<Vec<bool>>()
+            .iter()
             .any(|x| *x)
         {}
         self.finalize_dfa()
     }
 
     fn split_equivalence_set(&mut self, set_handle: Handle<EquivalenceSet<Symbol, Label>>) -> bool {
-        let unprocessed: Vec<Handle<DfaState<Symbol, Label>>> =
-            self.equivalence_sets[set_handle].states.drain(1..).collect();
+        let unprocessed: Vec<Handle<DfaState<Symbol, Label>>> = self.equivalence_sets[set_handle]
+            .states
+            .drain(1..)
+            .collect();
         let mut subsets: Vec<Handle<EquivalenceSet<Symbol, Label>>> = vec![set_handle];
 
         for state in unprocessed {
@@ -154,8 +167,7 @@ where
             }
 
             let containing_subset = containing_subset.unwrap_or_else(|| {
-                let subset
-                    = self.equivalence_sets.insert(EquivalenceSet::new());
+                let subset = self.equivalence_sets.insert(EquivalenceSet::new());
                 subsets.push(subset);
                 subset
             });
@@ -170,10 +182,11 @@ where
         subsets.len() > 1
     }
 
-
     // This should only be based on the map, as the sets themselves have been changed
     fn are_states_equivalence(
-        &self, state_1: Handle<DfaState<Symbol, Label>>, state_2: Handle<DfaState<Symbol, Label>>,
+        &self,
+        state_1: Handle<DfaState<Symbol, Label>>,
+        state_2: Handle<DfaState<Symbol, Label>>,
     ) -> bool {
         self.symbols.iter().all(|&symbol| {
             self.get_step_equivalence(state_1, symbol) == self.get_step_equivalence(state_2, symbol)
@@ -181,20 +194,25 @@ where
     }
 
     fn get_step_equivalence(
-        &self, state: Handle<DfaState<Symbol, Label>>, symbol: Handle<Symbol>,
-    ) -> Handle<EquivalenceSet<Symbol, Label>>
-    {
-        self.get_equivalence(self.dfa.step(state, symbol).expect(
-            "DFA should have been completed with dead state before minimization"
-        ))
+        &self,
+        state: Handle<DfaState<Symbol, Label>>,
+        symbol: Handle<Symbol>,
+    ) -> Handle<EquivalenceSet<Symbol, Label>> {
+        self.get_equivalence(
+            self.dfa
+                .step(state, symbol)
+                .expect("DFA should have been completed with dead state before minimization"),
+        )
     }
 
-    fn get_equivalence(&self, state: Handle<DfaState<Symbol, Label>>)
-                       -> Handle<EquivalenceSet<Symbol, Label>>
-    {
-        *self.equivalence_map.get(state).expect(
-            "All states should be associated with an equivalence set"
-        )
+    fn get_equivalence(
+        &self,
+        state: Handle<DfaState<Symbol, Label>>,
+    ) -> Handle<EquivalenceSet<Symbol, Label>> {
+        *self
+            .equivalence_map
+            .get(state)
+            .expect("All states should be associated with an equivalence set")
     }
 
     fn finalize_dfa(&self) -> Dfa<Symbol, Label> {
@@ -202,7 +220,6 @@ where
 
         let mut finalized_states_map = HandleMap::new();
         for set_handle in self.equivalence_sets.list_handles() {
-
             let new_state = finalized_dfa.new_state();
             finalized_states_map.insert(set_handle, new_state);
 
@@ -220,16 +237,17 @@ where
         for (set, &src) in finalized_states_map.iter() {
             for &symbol in &self.symbols {
                 let origin_src = self.equivalence_sets[set].states[0];
-                let origin_tar = self.dfa.step(origin_src, symbol).expect(
-                    "DFA should have been completed with dead state before minimization"
-                );
-                let &tar_set =
-                    self.equivalence_map.get(origin_tar).expect(
-                        "All states should be associated with an equivalence set"
-                    );
-                let &tar = finalized_states_map.get(tar_set).expect(
-                    "All equivalence sets should have an associated finalized-DFA state"
-                );
+                let origin_tar = self
+                    .dfa
+                    .step(origin_src, symbol)
+                    .expect("DFA should have been completed with dead state before minimization");
+                let &tar_set = self
+                    .equivalence_map
+                    .get(origin_tar)
+                    .expect("All states should be associated with an equivalence set");
+                let &tar = finalized_states_map
+                    .get(tar_set)
+                    .expect("All equivalence sets should have an associated finalized-DFA state");
                 finalized_dfa.link(src, tar, symbol);
             }
         }
@@ -256,7 +274,9 @@ impl<Symbol: Handled, Label> Handled for EquivalenceSet<Symbol, Label> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
+
     use crate::handles::specials::AutomaticallyHandled;
+
     use super::*;
 
     #[derive(Clone, Copy)]
@@ -266,9 +286,10 @@ mod tests {
     }
     impl AutomaticallyHandled for Symbol {
         type HandleCoreType = u8;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
-
 
     fn build_original_dfa() -> Dfa<Symbol, ()> {
         let mut dfa = Dfa::new();
@@ -302,9 +323,7 @@ mod tests {
 
     fn build_minimized_dfa() -> Dfa<Symbol, ()> {
         let mut dfa = Dfa::new();
-        let states: Vec<Handle<DfaState<Symbol, ()>>> = (0..2)
-            .map(|_| dfa.new_state())
-            .collect();
+        let states: Vec<Handle<DfaState<Symbol, ()>>> = (0..2).map(|_| dfa.new_state()).collect();
 
         dfa.set_initial_state(states[0]);
 

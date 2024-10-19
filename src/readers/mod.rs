@@ -5,11 +5,10 @@
 //! several implementations of the trait, which wrap standard sources of data with this required
 //! API.
 
-mod reader;
+pub use address_based::{AddressBasedReader, AddressSpace};
+pub use byte_array_reader::ByteArrayReader;
 pub use reader::Reader;
 
+mod reader;
 mod address_based;
-pub use address_based::{AddressSpace, AddressBasedReader};
-
 mod byte_array_reader;
-pub use byte_array_reader::ByteArrayReader;

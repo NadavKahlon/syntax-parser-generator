@@ -55,16 +55,13 @@
 //! assert_eq!(extracted_lexemes.collect::<Vec<Lexeme<MyLexemeType>>>(), actual_lexemes);
 //! ```
 
-mod regex;
+pub use lexeme::{Lexeme, LexemeDescriptor};
+pub use lexical_analyzer::LexicalAnalyzer;
 pub use regex::Regex;
 
-
+mod regex;
 mod lexeme;
-pub use lexeme::{Lexeme, LexemeDescriptor};
-
 mod lexical_analyzer;
-pub use lexical_analyzer::LexicalAnalyzer;
-
 mod lexeme_iterator;
 
 #[cfg(test)]

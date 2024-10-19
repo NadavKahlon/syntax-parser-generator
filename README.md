@@ -6,12 +6,12 @@ As such, it can generate 2 types of engines - for the 2 phases of syntax parsing
 naturally fit on top of each other:
 
 * [_Lexical analyzers_](https://en.wikipedia.org/wiki/Lexical_analysis): for tokenizing input
-    text by regular expressions.
+  text by regular expressions.
 * [_Syntax-directed translators_](https://en.wikipedia.org/wiki/Syntax-directed_translation):
-    for reconstructing the input's syntax-tree by context-free grammars (using the
-    [LALR](https://en.wikipedia.org/wiki/LALR_parser) algorithm), and translating it into some
-    user-defined representation, such as an abstract syntax-tree (AST) or a sequence of
-    intermediate code representation (IR).
+  for reconstructing the input's syntax-tree by context-free grammars (using the
+  [LALR](https://en.wikipedia.org/wiki/LALR_parser) algorithm), and translating it into some
+  user-defined representation, such as an abstract syntax-tree (AST) or a sequence of
+  intermediate code representation (IR).
 
 Check out the `lex` and `parsing` modules, respectively, for these purposes.
 
@@ -21,7 +21,7 @@ This project was built for fun - to practice Rust, and to test my knowledge in c
 Note that the crate is independent: its entire API and logic is designed and implemented
 in-house.
 
-Nevertheless, feel free to utilize this project to build your own parsers! You are also 
+Nevertheless, feel free to utilize this project to build your own parsers! You are also
 invited to contribute, hit-me-up if you wish to :)
 
 ## Documentation

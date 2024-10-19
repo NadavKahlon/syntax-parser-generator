@@ -1,9 +1,9 @@
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandledVec, HandleMap};
 use crate::handles::specials::OrderlyHandled;
+use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
 use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelSetsDfa, KernelSetsDfaState};
-use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
 use crate::parsing::lr_parser::rules::{Associativity, Binding, ProductionRule};
 
 impl<Terminal, Nonterminal, Tag> KernelSetsDfa<Terminal, Nonterminal, Tag>
@@ -20,15 +20,19 @@ where
         bindings: &HandledVec<Binding<Terminal>>,
         terminal_bindings_map: &HandleMap<Terminal, Handle<Binding<Terminal>>>,
         end_of_input_marker: Handle<Terminal>,
-    ) -> LrParser<Terminal, Nonterminal, Tag>
-    {
+    ) -> LrParser<Terminal, Nonterminal, Tag> {
         LrParserCompiler::new(
-            self, grammar_symbols, rules, start_rule, bindings, terminal_bindings_map,
+            self,
+            grammar_symbols,
+            rules,
+            start_rule,
+            bindings,
+            terminal_bindings_map,
             end_of_input_marker,
-        ).compile()
+        )
+            .compile()
     }
 }
-
 
 struct LrParserCompiler<'a, Terminal, Nonterminal, Tag>
 where
@@ -39,7 +43,7 @@ where
     parser: LrParser<Terminal, Nonterminal, Tag>,
     states_map: HandleMap<
         KernelSetsDfaState<Terminal, Nonterminal, Tag>,
-        Handle<LrParserState<Terminal, Nonterminal, Tag>>
+        Handle<LrParserState<Terminal, Nonterminal, Tag>>,
     >,
     dfa: &'a KernelSetsDfa<Terminal, Nonterminal, Tag>,
     grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
@@ -87,40 +91,38 @@ where
         }
     }
 
-    fn get_parser_state(&self, dfa_state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>)
-                        -> Handle<LrParserState<Terminal, Nonterminal, Tag>>
-    {
+    fn get_parser_state(
+        &self,
+        dfa_state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
+    ) -> Handle<LrParserState<Terminal, Nonterminal, Tag>> {
         *self.states_map.get(dfa_state).expect(
             "Every state in the kernel-sets DFA should be associated with a state in the \
-            target parser"
+            target parser",
         )
     }
 
     fn compile(mut self) -> LrParser<Terminal, Nonterminal, Tag> {
-        for (src_dfa_state, &src_parser_state)
-        in &self.states_map.clone()
-        {
+        for (src_dfa_state, &src_parser_state) in &self.states_map.clone() {
             for terminal in self.grammar_symbols.list_terminals() {
-                if let Some(action) =
-                    self.get_action(src_dfa_state, terminal)
-                {
+                if let Some(action) = self.get_action(src_dfa_state, terminal) {
                     self.parser.set_action(src_parser_state, terminal, action);
                 };
             }
             for nonterminal in self.grammar_symbols.list_nonterminals() {
-                if let Some(tar_parser_state) =
-                    self.get_goto(src_dfa_state, nonterminal)
-                {
-                    self.parser.set_goto(src_parser_state, nonterminal, tar_parser_state);
+                if let Some(tar_parser_state) = self.get_goto(src_dfa_state, nonterminal) {
+                    self.parser
+                        .set_goto(src_parser_state, nonterminal, tar_parser_state);
                 };
             }
         }
 
-        self.parser.set_end_of_input_marker(self.end_of_input_marker);
-        self.parser.set_initial_state(self.get_parser_state(self.dfa.get_initial_state().expect(
-            "The kernel-sets DFA is expected to have an initial state (associated with the \
-            start rule)"
-        )));
+        self.parser
+            .set_end_of_input_marker(self.end_of_input_marker);
+        self.parser
+            .set_initial_state(self.get_parser_state(self.dfa.get_initial_state().expect(
+                "The kernel-sets DFA is expected to have an initial state (associated with the \
+            start rule)",
+            )));
         self.parser
     }
 
@@ -128,11 +130,11 @@ where
         &mut self,
         src_dfa_state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
         nonterminal: Handle<Nonterminal>,
-    ) -> Option<Handle<LrParserState<Terminal, Nonterminal, Tag>>>
-    {
-        if let Some(tar_dfa_state) =
-            self.dfa.step(src_dfa_state, self.grammar_symbols.symbol_from_nonterminal(nonterminal))
-        {
+    ) -> Option<Handle<LrParserState<Terminal, Nonterminal, Tag>>> {
+        if let Some(tar_dfa_state) = self.dfa.step(
+            src_dfa_state,
+            self.grammar_symbols.symbol_from_nonterminal(nonterminal),
+        ) {
             Some(self.get_parser_state(tar_dfa_state))
         } else {
             None
@@ -143,10 +145,8 @@ where
         &mut self,
         src_dfa_state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
         terminal: Handle<Terminal>,
-    ) -> Option<LrParserAction<Terminal, Nonterminal, Tag>>
-    {
-        let mut suggested_actions =
-            self.collect_suggested_actions(src_dfa_state, terminal);
+    ) -> Option<LrParserAction<Terminal, Nonterminal, Tag>> {
+        let mut suggested_actions = self.collect_suggested_actions(src_dfa_state, terminal);
 
         let mut preferred_action = suggested_actions.pop()?;
         for alternative_action in suggested_actions {
@@ -161,16 +161,16 @@ where
         &mut self,
         src_dfa_state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
         terminal: Handle<Terminal>,
-    ) -> Vec<SuggestedAction<Terminal, Nonterminal, Tag>>
-    {
+    ) -> Vec<SuggestedAction<Terminal, Nonterminal, Tag>> {
         let mut suggested_actions = vec![];
         let kernel_set = self.dfa.get_label(src_dfa_state).as_ref().expect(
-            "Every state in the kernel-sets DFA should be labeled by the corresponding set"
+            "Every state in the kernel-sets DFA should be labeled by the corresponding set",
         );
 
         // Suggest shift
         if let Some(tar_dfa_state) = self.dfa.step(
-            src_dfa_state, self.grammar_symbols.symbol_from_terminal(terminal),
+            src_dfa_state,
+            self.grammar_symbols.symbol_from_terminal(terminal),
         ) {
             suggested_actions.push(SuggestedAction::Shift {
                 terminal,
@@ -205,29 +205,23 @@ where
         &self,
         action_1: &SuggestedAction<Terminal, Nonterminal, Tag>,
         action_2: &SuggestedAction<Terminal, Nonterminal, Tag>,
-    ) -> bool
-    {
+    ) -> bool {
         match (action_1, action_2) {
             (SuggestedAction::Accept, _) => true,
             (_, SuggestedAction::Accept) => false,
-            (SuggestedAction::Shift { .. }, SuggestedAction::Shift { .. }) => panic!(
-                "Shift-shift conflicts are impossible"
-            ),
-            (
-                SuggestedAction::Reduce(rule_1),
-                SuggestedAction::Reduce(rule_2),
-            ) => {
+            (SuggestedAction::Shift { .. }, SuggestedAction::Shift { .. }) => {
+                panic!("Shift-shift conflicts are impossible")
+            }
+            (SuggestedAction::Reduce(rule_1), SuggestedAction::Reduce(rule_2)) => {
                 // Resolve reduce-reduce conflict in favor of the first rule
                 self.rules[*rule_1].tag < self.rules[*rule_2].tag
             }
-            (
-                SuggestedAction::Shift { terminal, .. },
-                SuggestedAction::Reduce(rule)
-            ) => self.resolve_shift_reduce_conflict(*terminal, *rule),
-            (
-                SuggestedAction::Reduce(rule),
-                SuggestedAction::Shift { terminal, .. },
-            ) => !self.resolve_shift_reduce_conflict(*terminal, *rule),
+            (SuggestedAction::Shift { terminal, .. }, SuggestedAction::Reduce(rule)) => {
+                self.resolve_shift_reduce_conflict(*terminal, *rule)
+            }
+            (SuggestedAction::Reduce(rule), SuggestedAction::Shift { terminal, .. }) => {
+                !self.resolve_shift_reduce_conflict(*terminal, *rule)
+            }
         }
     }
 
@@ -236,8 +230,7 @@ where
         &self,
         shifted_terminal: Handle<Terminal>,
         reduced_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
-    ) -> bool
-    {
+    ) -> bool {
         match (
             self.terminal_bindings_map.get(shifted_terminal),
             self.rules[reduced_rule].binding,
@@ -258,7 +251,7 @@ where
                         Associativity::None => panic!(
                             "Cannot resolve a shift-reduce conflict if the bindings are the same, \
                             and it does not associate to any side"
-                        )
+                        ),
                     }
                 }
             }
@@ -268,19 +261,14 @@ where
     fn build_suggested_action(
         &self,
         suggested_action: SuggestedAction<Terminal, Nonterminal, Tag>,
-    ) -> LrParserAction<Terminal, Nonterminal, Tag>
-    {
+    ) -> LrParserAction<Terminal, Nonterminal, Tag> {
         match suggested_action {
-            SuggestedAction::Shift { state, .. } => {
-                LrParserAction::Shift(state)
-            }
-            SuggestedAction::Reduce(rule) => {
-                LrParserAction::Reduce {
-                    size: self.rules[rule].rhs.len(),
-                    nonterminal: self.rules[rule].lhs,
-                    tag: self.rules[rule].tag,
-                }
-            }
+            SuggestedAction::Shift { state, .. } => LrParserAction::Shift(state),
+            SuggestedAction::Reduce(rule) => LrParserAction::Reduce {
+                size: self.rules[rule].rhs.len(),
+                nonterminal: self.rules[rule].lhs,
+                tag: self.rules[rule].tag,
+            },
             SuggestedAction::Accept => LrParserAction::Accept,
         }
     }

@@ -1,4 +1,4 @@
 pub mod ast;
-mod node;
 mod context;
+mod node;
 pub mod parser;

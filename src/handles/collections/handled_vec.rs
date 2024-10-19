@@ -42,7 +42,9 @@ where
 {
     /// Creates a new, empty, [HandledVec].
     pub fn new() -> Self {
-        Self { contents: Vec::new() }
+        Self {
+            contents: Vec::new(),
+        }
     }
 
     /// Adds a new `item` into the collection, and returns its newly generated handle.
@@ -53,8 +55,7 @@ where
 
     /// Lists the handles to all available items in the collection.
     pub fn list_handles(&self) -> impl Iterator<Item=Handle<T>> {
-        (0..self.contents.len())
-            .map(|index| index.into())
+        (0..self.contents.len()).map(|index| index.into())
     }
 
     /// Get an iterator of references to the items in the collection.

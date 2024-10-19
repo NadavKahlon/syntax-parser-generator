@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+
 use crate::automata::dfa::{Dfa, DfaState};
 use crate::automata::nfa::{Nfa, NfaState};
-use crate::handles::collections::HandleBitSet;
 use crate::handles::{Handle, Handled};
+use crate::handles::collections::HandleBitSet;
 
 impl<Symbol, Label> Nfa<Symbol, Label>
 where
@@ -23,10 +24,8 @@ where
 {
     nfa: &'a Nfa<Symbol, NfaLabel>,
     dfa: Dfa<Symbol, DfaLabel>,
-    dfa_states_map: HashMap<
-        HandleBitSet<NfaState<Symbol, NfaLabel>>,
-        Handle<DfaState<Symbol, DfaLabel>>
-    >,
+    dfa_states_map:
+        HashMap<HandleBitSet<NfaState<Symbol, NfaLabel>>, Handle<DfaState<Symbol, DfaLabel>>>,
     unprocessed_new_states: Vec<(
         HandleBitSet<NfaState<Symbol, NfaLabel>>,
         Handle<DfaState<Symbol, DfaLabel>>,
@@ -42,9 +41,9 @@ where
     F: Fn(Vec<&NfaLabel>) -> Option<DfaLabel>,
 {
     fn new(nfa: &'a Nfa<Symbol, NfaLabel>, label_reduction: F) -> Self {
-        let initial_nfa_state = nfa.initial_state.expect(
-            "Cannot compile an NFA with no initial state into a DFA"
-        );
+        let initial_nfa_state = nfa
+            .initial_state
+            .expect("Cannot compile an NFA with no initial state into a DFA");
         Self {
             nfa,
             label_reduction,
@@ -57,8 +56,9 @@ where
     }
 
     fn compile(mut self) -> Dfa<Symbol, DfaLabel> {
-        let initial_nfa_state_set: HandleBitSet<NfaState<Symbol, NfaLabel>> =
-            self.nfa.epsilon_closure(&vec![self.initial_nfa_state].iter().collect());
+        let initial_nfa_state_set: HandleBitSet<NfaState<Symbol, NfaLabel>> = self
+            .nfa
+            .epsilon_closure(&vec![self.initial_nfa_state].iter().collect());
         let initial_dfa_state = self.install_new_state(&initial_nfa_state_set);
         self.dfa.set_initial_state(initial_dfa_state);
 
@@ -76,15 +76,15 @@ where
     }
 
     fn install_new_state(
-        &mut self, nfa_states: &HandleBitSet<NfaState<Symbol, NfaLabel>>,
-    ) -> Handle<DfaState<Symbol, DfaLabel>>
-    {
+        &mut self,
+        nfa_states: &HandleBitSet<NfaState<Symbol, NfaLabel>>,
+    ) -> Handle<DfaState<Symbol, DfaLabel>> {
         let dfa_state = self.dfa.new_state();
         self.dfa_states_map.insert(nfa_states.clone(), dfa_state);
-        self.unprocessed_new_states.push((nfa_states.clone(), dfa_state));
+        self.unprocessed_new_states
+            .push((nfa_states.clone(), dfa_state));
         dfa_state
     }
-
 
     fn process_new_state(
         &mut self,
@@ -92,15 +92,15 @@ where
         dfa_state: Handle<DfaState<Symbol, DfaLabel>>,
     ) {
         for &symbol in &self.all_symbols.clone() {
-            let target_nfa_states =
-                self.nfa.epsilon_closure(&self.nfa.move_by_symbol(&nfa_states, symbol));
+            let target_nfa_states = self
+                .nfa
+                .epsilon_closure(&self.nfa.move_by_symbol(&nfa_states, symbol));
 
             if !target_nfa_states.is_empty() {
-                let target_dfa_state =
-                    match self.dfa_states_map.get(&target_nfa_states) {
-                        None => self.install_new_state(&target_nfa_states),
-                        Some(&dfa_state) => dfa_state,
-                    };
+                let target_dfa_state = match self.dfa_states_map.get(&target_nfa_states) {
+                    None => self.install_new_state(&target_nfa_states),
+                    Some(&dfa_state) => dfa_state,
+                };
 
                 self.dfa.link(dfa_state, target_dfa_state, symbol);
             }
@@ -108,11 +108,7 @@ where
     }
 
     fn reduce_labels(&mut self) {
-        for (
-            nfa_states,
-            &dfa_state
-        ) in &self.dfa_states_map {
-
+        for (nfa_states, &dfa_state) in &self.dfa_states_map {
             let nfa_labels = nfa_states
                 .iter()
                 .flat_map(|nfa_state| self.nfa.get_label(nfa_state))
@@ -127,16 +123,19 @@ where
 #[cfg(test)]
 mod tests {
     use crate::handles::specials::AutomaticallyHandled;
+
     use super::*;
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     enum Symbol {
         Symbol1,
-        Symbol2
+        Symbol2,
     }
     impl AutomaticallyHandled for Symbol {
         type HandleCoreType = u8;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
 
     fn build_dfa_by_compiling_nfa() -> Dfa<Symbol, ()> {
@@ -150,13 +149,7 @@ mod tests {
         nfa.set_initial_state(states[0]);
         nfa.label(states[2], Some(()));
 
-        nfa.compile_to_dfa(|labels| {
-            if labels.is_empty() {
-                None
-            } else {
-                Some(())
-            }
-        })
+        nfa.compile_to_dfa(|labels| if labels.is_empty() { None } else { Some(()) })
     }
 
     fn build_dfa_manually() -> Dfa<Symbol, ()> {
@@ -177,9 +170,6 @@ mod tests {
 
     #[test]
     fn test() {
-        assert_eq!(
-            build_dfa_by_compiling_nfa(),
-            build_dfa_manually(),
-        )
+        assert_eq!(build_dfa_by_compiling_nfa(), build_dfa_manually(),)
     }
 }

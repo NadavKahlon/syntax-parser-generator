@@ -1,15 +1,17 @@
-pub mod build;
-mod lookaheads;
-mod compile_to_parser;
-mod firsts;
-
 use std::collections::HashSet;
+
 use derive_where::derive_where;
+
 use crate::automata::dfa::{Dfa, DfaState};
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::HandledVec;
 use crate::handles::specials::OrderlyHandled;
 use crate::parsing::lr_parser::rules::{GrammarSymbol, ProductionRule};
+
+pub mod build;
+mod compile_to_parser;
+mod firsts;
+mod lookaheads;
 
 pub type KernelSetsDfaState<Terminal, Nonterminal, Tag> =
 DfaState<GrammarSymbol<Terminal, Nonterminal>, KernelSet<Terminal, Nonterminal, Tag>>;
@@ -23,19 +25,21 @@ where
     Nonterminal: Handled,
     Tag: OrderlyHandled,
 {
-    pub fn kernel_set(&self, state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>)
-                      -> &KernelSet<Terminal, Nonterminal, Tag>
-    {
+    pub fn kernel_set(
+        &self,
+        state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
+    ) -> &KernelSet<Terminal, Nonterminal, Tag> {
         self.get_label(state).as_ref().expect(
-            "All states of a KernelSetsDfa should be labeled by the corresponding KernelSet"
+            "All states of a KernelSetsDfa should be labeled by the corresponding KernelSet",
         )
     }
 
-    pub fn mut_kernel_set(&mut self, state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>)
-                          -> &mut KernelSet<Terminal, Nonterminal, Tag>
-    {
+    pub fn mut_kernel_set(
+        &mut self,
+        state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
+    ) -> &mut KernelSet<Terminal, Nonterminal, Tag> {
         self.get_label_mut(state).expect(
-            "All states of a KernelSetsDfa should be labeled by the corresponding KernelSet"
+            "All states of a KernelSetsDfa should be labeled by the corresponding KernelSet",
         )
     }
 }
@@ -83,11 +87,10 @@ where
 {
     pub item: Item<Terminal, Nonterminal, Tag>,
     pub lookaheads: HashSet<Handle<Terminal>>,
-    pub propagations:
-        Vec<(
-            Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
-            Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>,
-        )>,
+    pub propagations: Vec<(
+        Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
+        Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>,
+    )>,
 }
 
 impl<Terminal, Nonterminal, Tag> KernelSetEntry<Terminal, Nonterminal, Tag>

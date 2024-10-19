@@ -7,10 +7,7 @@ where
     Tag: Handled,
 {
     Shift,
-    Reduce {
-        size: usize,
-        tag: Handle<Tag>,
-    },
+    Reduce { size: usize, tag: Handle<Tag> },
 }
 
 pub enum FinalDecision<Tag>
@@ -18,10 +15,7 @@ where
     Tag: Handled,
 {
     Accept,
-    Reduce {
-        size: usize,
-        tag: Handle<Tag>,
-    },
+    Reduce { size: usize, tag: Handle<Tag> },
 }
 
 impl<Tag> PartialEq<Self> for LrParserDecision<Tag>
@@ -32,8 +26,14 @@ where
         match (self, other) {
             (LrParserDecision::Shift, LrParserDecision::Shift) => true,
             (
-                LrParserDecision::Reduce { size: size_1, tag: tag_1 },
-                LrParserDecision::Reduce { size: size_2, tag: tag_2 }
+                LrParserDecision::Reduce {
+                    size: size_1,
+                    tag: tag_1,
+                },
+                LrParserDecision::Reduce {
+                    size: size_2,
+                    tag: tag_2,
+                },
             ) => (size_1 == size_2) && (tag_1 == tag_2),
             (_, _) => false,
         }
@@ -51,23 +51,22 @@ where
     end_of_input_marker: Handle<Terminal>,
 }
 
-impl<'a, Terminal, Nonterminal, Tag>
-LrParserExecution<'a, Terminal, Nonterminal, Tag>
+impl<'a, Terminal, Nonterminal, Tag> LrParserExecution<'a, Terminal, Nonterminal, Tag>
 where
     Nonterminal: Handled,
     Terminal: Handled,
     Tag: Handled,
 {
-    pub(super) fn new(machine: &'a LrParser<Terminal, Nonterminal, Tag>)
-                      -> LrParserExecution<Terminal, Nonterminal, Tag>
-    {
+    pub(super) fn new(
+        machine: &'a LrParser<Terminal, Nonterminal, Tag>,
+    ) -> LrParserExecution<Terminal, Nonterminal, Tag> {
         let initial_state = machine.initial_state.expect(
             "Cannot create an execution environment for an LrParser with no dedicated initial \
-            state"
+            state",
         );
         let end_of_input_marker = machine.end_of_input_marker.expect(
             "Cannot create an execution environment for an LrParser with no dedicated end-of-\
-            input terminal symbol"
+            input terminal symbol",
         );
         Self {
             machine,
@@ -89,7 +88,7 @@ where
         }
     }
 
-    #[allow(dead_code)]  // It is used for internal unit-testing
+    #[allow(dead_code)] // It is used for internal unit-testing
     pub fn finalize(&mut self) -> bool {
         loop {
             match self.decide_internal(self.end_of_input_marker) {
@@ -104,18 +103,20 @@ where
         match self.decide_internal(self.end_of_input_marker)? {
             LrParserInternalDecision::Continue(decision) => match decision {
                 LrParserDecision::Shift => panic!("End of input marker shouldn't be shifted"),
-                LrParserDecision::Reduce { size, tag } => {
-                    Some(FinalDecision::Reduce { size, tag })
-                }
-            }
+                LrParserDecision::Reduce { size, tag } => Some(FinalDecision::Reduce { size, tag }),
+            },
             LrParserInternalDecision::Accept => Some(FinalDecision::Accept),
         }
     }
 
-    fn decide_internal(&mut self, terminal: Handle<Terminal>)
-                       -> Option<LrParserInternalDecision<Tag>>
-    {
-        match self.machine.states[*self.stack.last()?].action_map.get(terminal)? {
+    fn decide_internal(
+        &mut self,
+        terminal: Handle<Terminal>,
+    ) -> Option<LrParserInternalDecision<Tag>> {
+        match self.machine.states[*self.stack.last()?]
+            .action_map
+            .get(terminal)?
+        {
             LrParserAction::Shift(state) => {
                 self.stack.push(*state);
                 Some(LrParserInternalDecision::Continue(LrParserDecision::Shift))
@@ -124,15 +125,17 @@ where
             LrParserAction::Reduce {
                 size,
                 nonterminal,
-                tag
+                tag,
             } => {
                 self.stack.truncate(self.stack.len() - size);
                 let current_last_state = &self.machine.states[*self.stack.last()?];
-                let new_state =
-                    current_last_state.goto_map.get(*nonterminal)?;
+                let new_state = current_last_state.goto_map.get(*nonterminal)?;
                 self.stack.push(*new_state);
                 Some(LrParserInternalDecision::Continue(
-                    LrParserDecision::Reduce { size: *size, tag: *tag }
+                    LrParserDecision::Reduce {
+                        size: *size,
+                        tag: *tag,
+                    },
                 ))
             }
 
@@ -153,22 +156,40 @@ where
 mod tests {
     use crate::handles::specials::AutomaticallyHandled;
     use crate::parsing::lr_parser::{LrParser, LrParserAction, LrParserState};
-    use crate::parsing::lr_parser::execute::tests::Production::{EIsT, FIsId, Mult, Paren, Sum, TIsF};
+    use crate::parsing::lr_parser::execute::tests::Production::{
+        EIsT, FIsId, Mult, Paren, Sum, TIsF,
+    };
     use crate::parsing::lr_parser::LrParserAction::{Accept, Reduce, Shift};
+
     use super::*;
 
     #[derive(Copy, Clone)]
-    enum Terminal { Id, Plus, Star, LeftParen, RightParen, Dollar }
+    enum Terminal {
+        Id,
+        Plus,
+        Star,
+        LeftParen,
+        RightParen,
+        Dollar,
+    }
     impl AutomaticallyHandled for Terminal {
         type HandleCoreType = u8;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
 
     #[derive(Copy, Clone)]
-    enum Nonterminal { E, T, F }
+    enum Nonterminal {
+        E,
+        T,
+        F,
+    }
     impl AutomaticallyHandled for Nonterminal {
         type HandleCoreType = u16;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
 
     #[derive(Debug, Copy, Clone)]
@@ -182,23 +203,49 @@ mod tests {
     }
     impl AutomaticallyHandled for Production {
         type HandleCoreType = u8;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
 
     fn create_parser() -> LrParser<Terminal, Nonterminal, Production> {
         // Based on the dragon book, page 252
 
         let mut parser = LrParser::new();
-        let states: Vec<Handle<LrParserState<Terminal, Nonterminal, Production>>>
-            = (0..12).map(|_| parser.new_state()).collect();
+        let states: Vec<Handle<LrParserState<Terminal, Nonterminal, Production>>> =
+            (0..12).map(|_| parser.new_state()).collect();
 
         let reductions: Vec<LrParserAction<Terminal, Nonterminal, Production>> = vec![
-            Reduce { size: 3, nonterminal: Nonterminal::E.handle(), tag: Sum.handle() },
-            Reduce { size: 1, nonterminal: Nonterminal::E.handle(), tag: EIsT.handle() },
-            Reduce { size: 3, nonterminal: Nonterminal::T.handle(), tag: Mult.handle() },
-            Reduce { size: 1, nonterminal: Nonterminal::T.handle(), tag: TIsF.handle() },
-            Reduce { size: 3, nonterminal: Nonterminal::F.handle(), tag: Paren.handle() },
-            Reduce { size: 1, nonterminal: Nonterminal::F.handle(), tag: FIsId.handle() },
+            Reduce {
+                size: 3,
+                nonterminal: Nonterminal::E.handle(),
+                tag: Sum.handle(),
+            },
+            Reduce {
+                size: 1,
+                nonterminal: Nonterminal::E.handle(),
+                tag: EIsT.handle(),
+            },
+            Reduce {
+                size: 3,
+                nonterminal: Nonterminal::T.handle(),
+                tag: Mult.handle(),
+            },
+            Reduce {
+                size: 1,
+                nonterminal: Nonterminal::T.handle(),
+                tag: TIsF.handle(),
+            },
+            Reduce {
+                size: 3,
+                nonterminal: Nonterminal::F.handle(),
+                tag: Paren.handle(),
+            },
+            Reduce {
+                size: 1,
+                nonterminal: Nonterminal::F.handle(),
+                tag: FIsId.handle(),
+            },
         ];
 
         parser.set_action(states[0], Terminal::Id.handle(), Shift(states[5]));
@@ -265,11 +312,17 @@ mod tests {
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 1,
+                tag: FIsId.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 1,
+                tag: TIsF.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
@@ -281,15 +334,24 @@ mod tests {
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 1,
+                tag: FIsId.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce { size: 3, tag: Mult.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 3,
+                tag: Mult.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: EIsT.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 1,
+                tag: EIsT.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Plus.handle()),
@@ -313,11 +375,17 @@ mod tests {
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: FIsId.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 1,
+                tag: FIsId.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),
-            Some(LrParserDecision::Reduce { size: 1, tag: TIsF.handle() }),
+            Some(LrParserDecision::Reduce {
+                size: 1,
+                tag: TIsF.handle()
+            }),
         );
         assert_eq!(
             execution.decide(Terminal::Star.handle()),

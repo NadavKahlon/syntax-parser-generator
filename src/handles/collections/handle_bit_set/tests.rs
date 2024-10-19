@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+
 use crate::handles::collections::handle_bit_set::HandleBitSet;
 use crate::handles::specials::AutomaticallyHandled;
 
@@ -45,22 +46,22 @@ fn test_union() {
 
     assert_eq!(
         set1.union(&set2),
-        vec![T::T4.handle(), T::T1.handle(), T::T2.handle()].into_iter().collect()
+        vec![T::T4.handle(), T::T1.handle(), T::T2.handle()]
+            .into_iter()
+            .collect()
     )
 }
 
 #[test]
 fn test_hash() {
     let set_hash_set: HashSet<HandleBitSet<T>> = vec![
-        vec![T::T2.handle(), T::T3.handle()]
-            .into_iter().collect(),
-        vec![T::T3.handle(), T::T2.handle()]
-            .into_iter().collect(),
-        vec![T::T3.handle()]
-            .into_iter().collect(),
-        vec![T::T1.handle(), T::T3.handle()]
-            .into_iter().collect(),
-    ].into_iter().collect();
+        vec![T::T2.handle(), T::T3.handle()].into_iter().collect(),
+        vec![T::T3.handle(), T::T2.handle()].into_iter().collect(),
+        vec![T::T3.handle()].into_iter().collect(),
+        vec![T::T1.handle(), T::T3.handle()].into_iter().collect(),
+    ]
+        .into_iter()
+        .collect();
     assert_eq!(set_hash_set.len(), 3)
 }
 

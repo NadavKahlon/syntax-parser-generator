@@ -1,15 +1,18 @@
 use std::collections::HashMap;
 use std::hash::Hash;
+
 use crate::automata::dfa::Dfa;
 use crate::automata::nfa::Nfa;
 use crate::handles::specials::AutomaticallyHandled;
-use crate::lex::lexeme_iterator::LexemeIterator;
 use crate::lex::{Lexeme, LexemeDescriptor};
+use crate::lex::lexeme_iterator::LexemeIterator;
 use crate::readers::Reader;
 
 impl AutomaticallyHandled for u8 {
     type HandleCoreType = u8;
-    fn serial(&self) -> usize { *self as usize }
+    fn serial(&self) -> usize {
+        *self as usize
+    }
 }
 
 /// A lexical analyzer.
@@ -17,8 +20,7 @@ impl AutomaticallyHandled for u8 {
 /// A lexical analyzer is a computation unit (an automaton), that is capable of reading a stream
 /// of characters, and separating it into [Lexeme]s: atomic sequences units of meaningful text,
 /// tokens. See [crate::lex] for more detail.
-pub struct LexicalAnalyzer<LexemeType>
-{
+pub struct LexicalAnalyzer<LexemeType> {
     dfa: Dfa<u8, LexemeType>,
 }
 
@@ -31,19 +33,24 @@ where
     ///
     /// The different `LexemeType`s that the analyzer will be capable of recognizing are described
     /// by `lexeme_descriptors`.
-    pub fn new(lexeme_descriptors: Vec<LexemeDescriptor<LexemeType>>) -> LexicalAnalyzer<LexemeType>
-    {
+    pub fn new(
+        lexeme_descriptors: Vec<LexemeDescriptor<LexemeType>>,
+    ) -> LexicalAnalyzer<LexemeType> {
         let mut nfa = Nfa::new();
         let global_start_state = nfa.new_state();
         nfa.set_initial_state(global_start_state);
 
         let mut priority_map = HashMap::new();
 
-        for (priority, LexemeDescriptor { pattern, lexeme_type })
-        in lexeme_descriptors.iter().enumerate()
+        for (
+            priority,
+            LexemeDescriptor {
+                pattern,
+                lexeme_type,
+            },
+        ) in lexeme_descriptors.iter().enumerate()
         {
-            let (pattern_start_state, pattern_end_state) =
-                pattern.build_into_nfa(&mut nfa);
+            let (pattern_start_state, pattern_end_state) = pattern.build_into_nfa(&mut nfa);
             nfa.link(global_start_state, pattern_start_state, None);
             nfa.label(pattern_end_state, Some(lexeme_type.clone()));
 
@@ -52,16 +59,18 @@ where
 
         let dfa = nfa
             .compile_to_dfa(|labels| {
-                labels.iter().min_by_key(|&&lexeme_type| {
-                    priority_map.get(lexeme_type)
-                }).cloned().cloned()
+                labels
+                    .iter()
+                    .min_by_key(|&&lexeme_type| priority_map.get(lexeme_type))
+                    .cloned()
+                    .cloned()
             })
             .minimize();
 
         // Make initial state is unlabeled, so we won't get stuck on epsilon when input is exhausted
         let initial_state = dfa.get_initial_state().expect(
             "Minimized DFA should have an initial state, as the associated NFA had one, and \
-            the initial state "
+            the initial state ",
         );
         if !dfa.get_label(initial_state).is_none() {
             panic!(
@@ -87,15 +96,17 @@ where
     ///
     /// If no known `LexemeType` could be matched against a prefix of the remaining input.
     ///
-    pub fn analyze<'a>(&'a self, reader: &'a mut impl Reader<u8>)
-                       -> impl Iterator<Item=Lexeme<LexemeType>> + 'a
-    {
+    pub fn analyze<'a>(
+        &'a self,
+        reader: &'a mut impl Reader<u8>,
+    ) -> impl Iterator<Item=Lexeme<LexemeType>> + 'a {
         LexemeIterator::new(self, reader)
     }
 
-    fn identify_next_lexeme(&self, reader: &mut impl Reader<u8>)
-                            -> LexemeIdentificationResult<LexemeType>
-    {
+    fn identify_next_lexeme(
+        &self,
+        reader: &mut impl Reader<u8>,
+    ) -> LexemeIdentificationResult<LexemeType> {
         let mut recent_lexeme_type: Option<LexemeType> = None;
         let mut current_state = self.dfa.get_initial_state();
 
@@ -134,27 +145,26 @@ where
         };
     }
 
-    pub(super) fn collect_next_lexeme(&self, reader: &mut impl Reader<u8>)
-                                      -> Option<Lexeme<LexemeType>>
-    {
+    pub(super) fn collect_next_lexeme(
+        &self,
+        reader: &mut impl Reader<u8>,
+    ) -> Option<Lexeme<LexemeType>> {
         let lexeme_type = loop {
             match self.identify_next_lexeme(reader) {
-                LexemeIdentificationResult::Identified(lexeme_type) => {
-                    break lexeme_type
-                }
-                LexemeIdentificationResult::InputExhausted => {
-                    return None
-                }
+                LexemeIdentificationResult::Identified(lexeme_type) => break lexeme_type,
+                LexemeIdentificationResult::InputExhausted => return None,
                 LexemeIdentificationResult::LexicalError => {
                     self.error_recovery_routine(reader);
                 }
             }
         };
 
-        let contents = String::from_utf8(reader.get_sequence().collect()).expect(
-            "Tokens from lexically-analyzed Reader<u8> are expected to be UTF-8 encoded"
-        );
-        let lexeme = Lexeme { lexeme_type, contents };
+        let contents = String::from_utf8(reader.get_sequence().collect())
+            .expect("Tokens from lexically-analyzed Reader<u8> are expected to be UTF-8 encoded");
+        let lexeme = Lexeme {
+            lexeme_type,
+            contents,
+        };
         reader.restart_from_tail();
         Some(lexeme)
     }

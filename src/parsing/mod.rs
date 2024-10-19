@@ -130,10 +130,9 @@
 //! }
 //! ```
 
+pub use lr_parser::rules::Associativity;
 pub use translator::build::SyntaxDirectedTranslatorBuilder;
 pub use translator::sdt::SyntaxDirectedTranslator;
 
 mod lr_parser;
-pub use lr_parser::rules::Associativity;
-
 mod translator;

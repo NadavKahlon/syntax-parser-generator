@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+
 use crate::automata::nfa::Nfa;
-use crate::handles::collections::{HandledVec, HandleMap};
 use crate::handles::{Handle, Handled};
+use crate::handles::collections::{HandledVec, HandleMap};
 use crate::handles::specials::OrderlyHandled;
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
 use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelSet, KernelSetsDfa};
-use crate::parsing::lr_parser::rules::{ProductionRule, GrammarSymbol};
+use crate::parsing::lr_parser::rules::{GrammarSymbol, ProductionRule};
 
 impl<Terminal, Nonterminal, Tag> KernelSetsDfa<Terminal, Nonterminal, Tag>
 where
@@ -18,11 +19,16 @@ where
         start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
         grammar_symbols: &'a GrammarSymbolsCollection<Terminal, Nonterminal>,
         rules_for_nonterminals: &'a HandleMap<
-            Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>
+            Nonterminal,
+            Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>,
         >,
-    ) -> Self
-    {
-        KernelSetsDfaBuilder { rules, start_rule, grammar_symbols, rules_for_nonterminals }
+    ) -> Self {
+        KernelSetsDfaBuilder {
+            rules,
+            start_rule,
+            grammar_symbols,
+            rules_for_nonterminals,
+        }
             .build()
     }
 }
@@ -51,9 +57,9 @@ where
         self.items_nfa_to_kernels_dfa(&items_nfa)
     }
 
-    fn build_items_nfa(&self)
-                       -> Nfa<GrammarSymbol<Terminal, Nonterminal>, Item<Terminal, Nonterminal, Tag>>
-    {
+    fn build_items_nfa(
+        &self,
+    ) -> Nfa<GrammarSymbol<Terminal, Nonterminal>, Item<Terminal, Nonterminal, Tag>> {
         let mut nfa = Nfa::new();
         let mut item_states_map = HashMap::new();
 
@@ -68,25 +74,32 @@ where
 
         for (item, &state) in item_states_map.iter() {
             if item.dot < self.rules[item.rule].rhs.len() {
-                let next_item = Item { rule: item.rule, dot: item.dot + 1 };
-                let &next_item_state = item_states_map.get(&next_item).expect(
-                    "Every item should have an NFA state associated with it"
-                );
-                let symbol = self.grammar_symbols
+                let next_item = Item {
+                    rule: item.rule,
+                    dot: item.dot + 1,
+                };
+                let &next_item_state = item_states_map
+                    .get(&next_item)
+                    .expect("Every item should have an NFA state associated with it");
+                let symbol = self
+                    .grammar_symbols
                     .get_handle(&self.rules[item.rule].rhs[item.dot]);
                 nfa.link(state, next_item_state, Some(symbol));
 
-                if let GrammarSymbol::Nonterminal(nonterminal)
-                    = self.rules[item.rule].rhs[item.dot]
+                if let GrammarSymbol::Nonterminal(nonterminal) = self.rules[item.rule].rhs[item.dot]
                 {
                     let rules_for_nonterminal =
                         self.rules_for_nonterminals.get(nonterminal).expect(
                             "Every nonterminal should have a (maybe empty) vector of rules \
-                            associated with it"
+                            associated with it",
                         );
                     for &next_rule in rules_for_nonterminal {
-                        let next_item = Item { rule: next_rule, dot: 0 };
-                        let &next_item_state = item_states_map.get(&next_item)
+                        let next_item = Item {
+                            rule: next_rule,
+                            dot: 0,
+                        };
+                        let &next_item_state = item_states_map
+                            .get(&next_item)
                             .expect("Every item should have an NFA state associated with it");
                         nfa.link(state, next_item_state, None);
                     }
@@ -94,8 +107,12 @@ where
             }
         }
 
-        let start_item = Item { rule: self.start_rule, dot: 0 };
-        let &start_rule_state = item_states_map.get(&start_item)
+        let start_item = Item {
+            rule: self.start_rule,
+            dot: 0,
+        };
+        let &start_rule_state = item_states_map
+            .get(&start_item)
             .expect("Every item should have an NFA state associated with it");
         nfa.set_initial_state(start_rule_state);
 
@@ -105,22 +122,19 @@ where
     fn items_nfa_to_kernels_dfa(
         &self,
         nfa: &Nfa<GrammarSymbol<Terminal, Nonterminal>, Item<Terminal, Nonterminal, Tag>>,
-    ) -> KernelSetsDfa<Terminal, Nonterminal, Tag>
-    {
+    ) -> KernelSetsDfa<Terminal, Nonterminal, Tag> {
         nfa.compile_to_dfa(|items| {
             Some(KernelSet::new(
                 items
                     .into_iter()
                     .filter(|item| self.is_kernel_item(item))
-                    .copied()
+                    .copied(),
             ))
         })
     }
 
     fn is_kernel_item(&self, item: &Item<Terminal, Nonterminal, Tag>) -> bool {
         // My addition to the algorithm: empty rules are also kernel items
-        (item.dot != 0) ||
-            (item.rule == self.start_rule) ||
-            self.rules[item.rule].rhs.is_empty()
+        (item.dot != 0) || (item.rule == self.start_rule) || self.rules[item.rule].rhs.is_empty()
     }
 }

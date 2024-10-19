@@ -52,7 +52,9 @@ where
                 break None;
             }
 
-            let handle = Handle { core: T::HandleCoreType::from_index(self.curr_index) };
+            let handle = Handle {
+                core: T::HandleCoreType::from_index(self.curr_index),
+            };
             self.curr_index += 1;
 
             if self.set.contains(handle) {

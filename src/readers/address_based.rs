@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+
 use crate::readers::Reader;
 
 /// A sequence of items that can be accessed by conceptual addresses.
@@ -64,8 +65,8 @@ where
     fn get_sequence(&self) -> impl Iterator<Item=T> {
         (self.head_address..self.tail_address)
             .map(|address| self.address_space.read_at(address))
-            .map(|optional_item| optional_item.expect(
-                "Sequence of Reader items between head & tail should exist"
-            ))
+            .map(|optional_item| {
+                optional_item.expect("Sequence of Reader items between head & tail should exist")
+            })
     }
 }

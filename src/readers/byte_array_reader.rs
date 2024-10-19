@@ -6,7 +6,9 @@ pub struct ByteArrayAddressSpace {
 
 impl ByteArrayAddressSpace {
     fn from_string(data: String) -> Self {
-        ByteArrayAddressSpace { data: data.into_bytes().into_boxed_slice() }
+        ByteArrayAddressSpace {
+            data: data.into_bytes().into_boxed_slice(),
+        }
     }
 }
 
@@ -35,10 +37,10 @@ impl ByteArrayReader {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::readers::Reader;
+
     use super::*;
 
     #[test]

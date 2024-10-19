@@ -1,6 +1,7 @@
 // TODO create a whole module for this, complete with explicit data structures
 
 use std::cmp::Ordering;
+
 use crate::handles::{Handle, Handled};
 
 /// [Handled] types whose handles can be compared by order.

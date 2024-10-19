@@ -40,7 +40,9 @@ where
 {
     /// Create a new, empty, collection.
     pub fn new() -> Self {
-        Self { contents: HashMap::new() }
+        Self {
+            contents: HashMap::new(),
+        }
     }
 
     /// Check whether the collection contains a given item.
@@ -83,7 +85,8 @@ where
 
     /// Get the handle associated with one of the collection's items.
     fn index(&self, index: T) -> &Self::Output {
-        self.get_handle(&index).expect("No handles is associated with index item")
+        self.get_handle(&index)
+            .expect("No handles is associated with index item")
     }
 }
 

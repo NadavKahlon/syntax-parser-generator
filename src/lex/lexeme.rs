@@ -5,7 +5,6 @@ use crate::lex::regex::Regex;
 /// This is used as part of a lexical-analyzer's specification, as it is built to recognize
 /// different types of lexemes.
 pub struct LexemeDescriptor<LexemeType> {
-
     /// The type of lexemes being described.
     pub lexeme_type: LexemeType,
 
@@ -17,7 +16,10 @@ impl<LexemeType> LexemeDescriptor<LexemeType> {
     /// Creates a [LexemeDescriptor] describing the specified `lexeme_type` with the specified
     ///`pattern`.
     pub fn new(lexeme_type: LexemeType, pattern: Regex) -> Self {
-        LexemeDescriptor { lexeme_type, pattern }
+        LexemeDescriptor {
+            lexeme_type,
+            pattern,
+        }
     }
 
     /// Creates a new [LexemeDescriptor] that describes a keyword.

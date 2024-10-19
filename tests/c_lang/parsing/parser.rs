@@ -1,5 +1,6 @@
 use syntax_parser_generator::lex::Lexeme;
 use syntax_parser_generator::parsing::{SyntaxDirectedTranslator, SyntaxDirectedTranslatorBuilder};
+
 use crate::c_lang::lex::lexeme_types::CLexemeType;
 use crate::c_lang::parsing::ast::AbstractProgram;
 use crate::c_lang::parsing::context::CParserContext;
@@ -10,10 +11,14 @@ pub struct CParser {
 }
 
 impl CParser {
-    pub fn parse(&self, token_stream: impl Iterator<Item=Lexeme<CLexemeType>>)
-                 -> Option<AbstractProgram>
-    {
-        match self.translator.translate(&mut CParserContext, token_stream)?? {
+    pub fn parse(
+        &self,
+        token_stream: impl Iterator<Item=Lexeme<CLexemeType>>,
+    ) -> Option<AbstractProgram> {
+        match self
+            .translator
+            .translate(&mut CParserContext, token_stream)??
+        {
             CParserNode::AbstractProgram(ast) => Some(ast),
             _ => None,
         }
@@ -23,40 +28,49 @@ impl CParser {
         let mut builder = SyntaxDirectedTranslatorBuilder::new();
 
         // Register nonterminals
-        builder.new_nonterminals(vec![
-            "abstract_program", "global_statement_list", "global_statement", "function_definition",
-            "dtype", "formal_arg_list", "formal_arg", "formal_arg_list_nonempty",
-            "local_statement_list", "local_statement", "expression", "lvalue",
-        ].into_iter());
+        builder.new_nonterminals(
+            vec![
+                "abstract_program",
+                "global_statement_list",
+                "global_statement",
+                "function_definition",
+                "dtype",
+                "formal_arg_list",
+                "formal_arg",
+                "formal_arg_list_nonempty",
+                "local_statement_list",
+                "local_statement",
+                "expression",
+                "lvalue",
+            ]
+                .into_iter(),
+        );
         builder.set_start_nonterminal("abstract_program");
 
         // Register terminals
-        builder.dub_lexeme_types(vec![
-            (CLexemeType::If, "if"),
-            (CLexemeType::Else, "else"),
-            (CLexemeType::While, "while"),
-            (CLexemeType::Int, "int"),
-            (CLexemeType::Identifier, "IDENTIFIER"),
-            (CLexemeType::IntLiteral, "INT_LITERAL"),
-            (CLexemeType::Assignment, "="),
-            (CLexemeType::LeftParenthesis, "("),
-            (CLexemeType::RightParenthesis, ")"),
-            (CLexemeType::LeftBrace, "{"),
-            (CLexemeType::RightBrace, "}"),
-            (CLexemeType::Semicolon, ";"),
-            (CLexemeType::Comma, ","),
-        ].into_iter());
+        builder.dub_lexeme_types(
+            vec![
+                (CLexemeType::If, "if"),
+                (CLexemeType::Else, "else"),
+                (CLexemeType::While, "while"),
+                (CLexemeType::Int, "int"),
+                (CLexemeType::Identifier, "IDENTIFIER"),
+                (CLexemeType::IntLiteral, "INT_LITERAL"),
+                (CLexemeType::Assignment, "="),
+                (CLexemeType::LeftParenthesis, "("),
+                (CLexemeType::RightParenthesis, ")"),
+                (CLexemeType::LeftBrace, "{"),
+                (CLexemeType::RightBrace, "}"),
+                (CLexemeType::Semicolon, ";"),
+                (CLexemeType::Comma, ","),
+            ]
+                .into_iter(),
+        );
 
         // Register leaf satellite builders
         builder.set_default_leaf_satellite_builder(|_, _| None);
-        builder.set_leaf_satellite_builder(
-            "IDENTIFIER",
-            CParserContext::identifier,
-        );
-        builder.set_leaf_satellite_builder(
-            "INT_LITERAL",
-            CParserContext::int_literal,
-        );
+        builder.set_leaf_satellite_builder("IDENTIFIER", CParserContext::identifier);
+        builder.set_leaf_satellite_builder("INT_LITERAL", CParserContext::int_literal);
 
         // Production rules
 
@@ -72,9 +86,14 @@ impl CParser {
         builder.register_rule(
             "function_definition",
             vec![
-                "dtype", "IDENTIFIER",
-                "(", "formal_arg_list", ")",
-                "{", "local_statement_list", "}",
+                "dtype",
+                "IDENTIFIER",
+                "(",
+                "formal_arg_list",
+                ")",
+                "{",
+                "local_statement_list",
+                "}",
             ],
             CParserContext::function_definition,
         );
@@ -129,7 +148,15 @@ impl CParser {
         );
         builder.register_rule(
             "local_statement",
-            vec!["if", "(", "expression", ")", "local_statement", "else", "local_statement"],
+            vec![
+                "if",
+                "(",
+                "expression",
+                ")",
+                "local_statement",
+                "else",
+                "local_statement",
+            ],
             CParserContext::if_else_statement,
         );
         builder.register_rule(
@@ -156,12 +183,10 @@ impl CParser {
             CParserContext::identifier_lvalue,
         );
 
-        builder.register_rule(
-            "dtype",
-            vec!["int"],
-            CParserContext::int_dtype,
-        );
+        builder.register_rule("dtype", vec!["int"], CParserContext::int_dtype);
 
-        Self { translator: builder.build() }
+        Self {
+            translator: builder.build(),
+        }
     }
 }

@@ -95,8 +95,7 @@ where
     U: Debug,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.iter().collect::<Vec<(Handle<T>, &U)>>()
-            .fmt(f)
+        self.iter().collect::<Vec<(Handle<T>, &U)>>().fmt(f)
     }
 }
 
@@ -151,9 +150,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             match self.map.contents.get(self.curr_index)? {
-                None => {
-                    self.curr_index += 1
-                }
+                None => self.curr_index += 1,
                 Some(content) => {
                     let handle: Handle<T> = self.curr_index.into();
                     self.curr_index += 1;
@@ -163,7 +160,6 @@ where
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -193,14 +189,10 @@ mod tests {
         map.insert(50.into(), 32);
         map.insert(2.into(), 2);
 
-
         assert_eq!(
-            map.into_iter().collect::<Vec<(Handle<DummyHandled>, &i32)>>(),
-            vec![
-                (1.into(), &1),
-                (2.into(), &2),
-                (50.into(), &32),
-            ]
+            map.into_iter()
+                .collect::<Vec<(Handle<DummyHandled>, &i32)>>(),
+            vec![(1.into(), &1), (2.into(), &2), (50.into(), &32)]
         )
     }
 }

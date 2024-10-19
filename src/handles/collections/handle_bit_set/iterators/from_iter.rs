@@ -17,7 +17,6 @@ where
     }
 }
 
-
 impl<'a, T> FromIterator<&'a Handle<T>> for HandleBitSet<T>
 where
     T: Handled,

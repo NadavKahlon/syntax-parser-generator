@@ -39,4 +39,6 @@ pub trait AutomaticallyHandled: Sized {
 impl<T> Handled for T
 where
     T: AutomaticallyHandled,
-{ type HandleCoreType = T::HandleCoreType; }
+{
+    type HandleCoreType = T::HandleCoreType;
+}

@@ -12,7 +12,7 @@ pub use handle_map::HandleMap;
 pub use handled_hash_map::HandledHashMap;
 pub use handled_vec::HandledVec;
 
-mod handled_vec;
-mod handled_hash_map;
-mod handle_map;
 mod handle_bit_set;
+mod handle_map;
+mod handled_hash_map;
+mod handled_vec;

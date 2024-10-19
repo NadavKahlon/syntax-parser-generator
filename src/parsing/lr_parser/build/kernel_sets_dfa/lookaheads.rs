@@ -1,10 +1,14 @@
 use std::collections::HashSet;
+
 use derive_where::derive_where;
+
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandledVec, HandleMap};
 use crate::handles::specials::OrderlyHandled;
 use crate::parsing::lr_parser::build::grammar_symbols::GrammarSymbolsCollection;
-use crate::parsing::lr_parser::build::kernel_sets_dfa::{Item, KernelSetEntry, KernelSetsDfa, KernelSetsDfaState};
+use crate::parsing::lr_parser::build::kernel_sets_dfa::{
+    Item, KernelSetEntry, KernelSetsDfa, KernelSetsDfaState,
+};
 use crate::parsing::lr_parser::build::kernel_sets_dfa::firsts::FirstsMap;
 use crate::parsing::lr_parser::rules::{GrammarSymbol, ProductionRule};
 
@@ -20,13 +24,20 @@ where
         rules: &HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
         start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
         rules_for_nonterminals: &HandleMap<
-            Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>
+            Nonterminal,
+            Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>,
         >,
         end_of_input_marker: Handle<Terminal>,
     ) {
         LookaheadsGenerator::new(
-            grammar_symbols, self, rules, start_rule, rules_for_nonterminals, end_of_input_marker,
-        ).generate();
+            grammar_symbols,
+            self,
+            rules,
+            start_rule,
+            rules_for_nonterminals,
+            end_of_input_marker,
+        )
+            .generate();
     }
 }
 
@@ -58,7 +69,8 @@ where
         rules: &'a HandledVec<ProductionRule<Terminal, Nonterminal, Tag>>,
         start_rule: Handle<ProductionRule<Terminal, Nonterminal, Tag>>,
         rules_for_nonterminals: &'a HandleMap<
-            Nonterminal, Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>
+            Nonterminal,
+            Vec<Handle<ProductionRule<Terminal, Nonterminal, Tag>>>,
         >,
         end_of_input_marker: Handle<Terminal>,
     ) -> Self {
@@ -86,15 +98,14 @@ where
             rule: self.start_rule,
             dot: 0,
         };
-        let initial_state =
-            self.dfa.get_initial_state().expect(
-                "The kernel-sets DFA is should have an initial state"
-            );
-        let initial_item_entry =
-            self.locate_entry(initial_state, initial_item).expect(
-                "The initial item is expected to be associated with the initial state of the \
-                kernel-sets DFA"
-            );
+        let initial_state = self
+            .dfa
+            .get_initial_state()
+            .expect("The kernel-sets DFA is should have an initial state");
+        let initial_item_entry = self.locate_entry(initial_state, initial_item).expect(
+            "The initial item is expected to be associated with the initial state of the \
+                kernel-sets DFA",
+        );
         self.handle_lookahead_record_order(LookaheadRecordingOrder::Spontaneous {
             tar_state: initial_state,
             tar_entry: initial_item_entry,
@@ -103,12 +114,12 @@ where
     }
 
     fn record_lookaheads_from(
-        &mut self, state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
+        &mut self,
+        state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
     ) {
         let kernel_set = self.dfa.kernel_set(state);
         let mut orders = Vec::new();
-        let mock_terminal
-            = Handle::mock(&self.grammar_symbols.list_terminals().collect());
+        let mock_terminal = Handle::mock(&self.grammar_symbols.list_terminals().collect());
 
         for kernel_set_entry_handle in kernel_set.entries.list_handles() {
             let kernel_set_entry = &kernel_set.entries[kernel_set_entry_handle];
@@ -119,8 +130,8 @@ where
             };
             let mock_closure = self.lr1_item_closure(mock_item);
             for mock_closure_item in mock_closure {
-                if let Some((tar_state, tar_entry))
-                    = self.locate_target_entry(state, &mock_closure_item)
+                if let Some((tar_state, tar_entry)) =
+                    self.locate_target_entry(state, &mock_closure_item)
                 {
                     if mock_closure_item.lookahead != mock_terminal {
                         orders.push(LookaheadRecordingOrder::Spontaneous {
@@ -160,50 +171,44 @@ where
                     let lookaheads = entry.lookaheads.clone();
                     let propagations = entry.propagations.clone();
 
-                    for (tar_state, tar_entry) in
-                        propagations
-                    {
+                    for (tar_state, tar_entry) in propagations {
                         for &lookahead in &lookaheads {
-                            changed |= self.dfa
-                                .mut_kernel_set(tar_state)
-                                .entries[tar_entry]
+                            changed |= self.dfa.mut_kernel_set(tar_state).entries[tar_entry]
                                 .lookaheads
                                 .insert(lookahead);
-                        };
+                        }
                     }
                 }
             }
         }
     }
 
-    fn lr1_item_closure(&self, src_lr1_item: Lr1Item<Terminal, Nonterminal, Tag>)
-                        -> HashSet<Lr1Item<Terminal, Nonterminal, Tag>>
-    {
+    fn lr1_item_closure(
+        &self,
+        src_lr1_item: Lr1Item<Terminal, Nonterminal, Tag>,
+    ) -> HashSet<Lr1Item<Terminal, Nonterminal, Tag>> {
         let mut closure = HashSet::new();
         let mut lr1_items_to_process = vec![src_lr1_item];
 
         while let Some(lr1_item) = lr1_items_to_process.pop() {
             if closure.insert(lr1_item) {
                 let rhs = &self.rules[lr1_item.rule].rhs;
-                if let Some(&GrammarSymbol::Nonterminal(nonterminal))
-                    = rhs.get(lr1_item.dot)
-                {
-                    let suffix: Vec<GrammarSymbol<Terminal, Nonterminal>> =
-                        rhs[(lr1_item.dot + 1)..]
-                            .iter()
-                            .copied()
-                            .chain(vec![GrammarSymbol::Terminal(lr1_item.lookahead)].into_iter())
-                            .collect();
-                    let first_terminals: Vec<Handle<Terminal>>
-                        = self.firsts_map.terminal_firsts_for_string(&suffix).collect();
+                if let Some(&GrammarSymbol::Nonterminal(nonterminal)) = rhs.get(lr1_item.dot) {
+                    let suffix: Vec<GrammarSymbol<Terminal, Nonterminal>> = rhs
+                        [(lr1_item.dot + 1)..]
+                        .iter()
+                        .copied()
+                        .chain(vec![GrammarSymbol::Terminal(lr1_item.lookahead)].into_iter())
+                        .collect();
+                    let first_terminals: Vec<Handle<Terminal>> = self
+                        .firsts_map
+                        .terminal_firsts_for_string(&suffix)
+                        .collect();
 
-                    let next_rules = self
-                        .rules_for_nonterminals
-                        .get(nonterminal)
-                        .expect(
-                            "All nonterminals should have a (maybe empty) list of rules \
-                            associated with them"
-                        );
+                    let next_rules = self.rules_for_nonterminals.get(nonterminal).expect(
+                        "All nonterminals should have a (maybe empty) list of rules \
+                            associated with them",
+                    );
                     for &next_rule in next_rules {
                         for &first_terminal in &first_terminals {
                             lr1_items_to_process.push(Lr1Item {
@@ -227,11 +232,11 @@ where
         Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
         Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>,
     )> {
-        if let Some(&transition_symbol)
-            = self.rules[mock_closure_item.rule].rhs.get(mock_closure_item.dot)
+        if let Some(&transition_symbol) = self.rules[mock_closure_item.rule]
+            .rhs
+            .get(mock_closure_item.dot)
         {
-            let transition_symbol_handle =
-                self.grammar_symbols.get_handle(&transition_symbol);
+            let transition_symbol_handle = self.grammar_symbols.get_handle(&transition_symbol);
             let target_state = self.dfa.step(src_state, transition_symbol_handle)
                 .expect(
                     "Since the target item was found by stepping from an item in the source \
@@ -241,22 +246,22 @@ where
                 rule: mock_closure_item.rule,
                 dot: mock_closure_item.dot + 1,
             };
-            let target_entry = self.locate_entry(target_state, target_item)
-                .expect(
-                    "Could not find the target item in the target state, though it was built \
-                    by stepping from an item in source item's closure"
-                );
+            let target_entry = self.locate_entry(target_state, target_item).expect(
+                "Could not find the target item in the target state, though it was built \
+                    by stepping from an item in source item's closure",
+            );
             Some((target_state, target_entry))
         } else if self.rules[mock_closure_item.rule].rhs.is_empty() {
             // My addition to the algorithm: empty rules are also kernel items, and deserve
             // lookaheads
-            let target_item = Item { rule: mock_closure_item.rule, dot: mock_closure_item.dot };
-            let target_entry = self
-                .locate_entry(src_state, target_item)
-                .expect(
-                    "Could not find the target empty-item in the current state, though it \
-                    was generated as an item in the source item's closure"
-                );
+            let target_item = Item {
+                rule: mock_closure_item.rule,
+                dot: mock_closure_item.dot,
+            };
+            let target_entry = self.locate_entry(src_state, target_item).expect(
+                "Could not find the target empty-item in the current state, though it \
+                    was generated as an item in the source item's closure",
+            );
             Some((src_state, target_entry))
         } else {
             None
@@ -267,11 +272,12 @@ where
         &self,
         state: Handle<KernelSetsDfaState<Terminal, Nonterminal, Tag>>,
         item: Item<Terminal, Nonterminal, Tag>,
-    ) -> Option<Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>>
-    {
-        let set = self.dfa.get_label(state).as_ref().expect(
-            "Every state should be labeled by the corresponding kernel items set"
-        );
+    ) -> Option<Handle<KernelSetEntry<Terminal, Nonterminal, Tag>>> {
+        let set = self
+            .dfa
+            .get_label(state)
+            .as_ref()
+            .expect("Every state should be labeled by the corresponding kernel items set");
         for entry_handle in set.entries.list_handles() {
             let entry = &set.entries[entry_handle];
             if entry.item == item {
@@ -290,18 +296,20 @@ where
                 src_state,
                 src_entry,
                 tar_state,
-                tar_entry
+                tar_entry,
             } => {
-                self.dfa.mut_kernel_set(src_state).entries[src_entry].propagations.push(
-                    (tar_state, tar_entry)
-                );
+                self.dfa.mut_kernel_set(src_state).entries[src_entry]
+                    .propagations
+                    .push((tar_state, tar_entry));
             }
             LookaheadRecordingOrder::Spontaneous {
                 tar_state,
                 tar_entry,
-                lookahead
+                lookahead,
             } => {
-                self.dfa.mut_kernel_set(tar_state).entries[tar_entry].lookaheads.insert(lookahead);
+                self.dfa.mut_kernel_set(tar_state).entries[tar_entry]
+                    .lookaheads
+                    .insert(lookahead);
             }
         }
     }
@@ -318,7 +326,6 @@ where
     dot: usize,
     lookahead: Handle<Terminal>,
 }
-
 
 pub enum LookaheadRecordingOrder<Terminal, Nonterminal, Tag>
 where

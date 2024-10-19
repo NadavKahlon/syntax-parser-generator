@@ -1,9 +1,8 @@
 use crate::lex::Lexeme;
-
 use crate::lex::LexemeDescriptor;
 use crate::lex::lexical_analyzer::LexicalAnalyzer;
-use crate::readers::ByteArrayReader;
 use crate::lex::regex::Regex;
+use crate::readers::ByteArrayReader;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum TestLexemeType {
@@ -27,25 +26,21 @@ fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
                     Regex::character_range('A', 'Z'),
                     Regex::single_char('_'),
                 ]),
-                Regex::star_from(
-                    Regex::union(vec![
-                        Regex::character_range('a', 'z'),
-                        Regex::character_range('A', 'Z'),
-                        Regex::character_range('0', '9'),
-                        Regex::single_char('_'),
-                    ]),
-                ),
+                Regex::star_from(Regex::union(vec![
+                    Regex::character_range('a', 'z'),
+                    Regex::character_range('A', 'Z'),
+                    Regex::character_range('0', '9'),
+                    Regex::single_char('_'),
+                ])),
             ]),
         ),
         LexemeDescriptor::new(
             TestLexemeType::Integer,
             Regex::concat(vec![
-                Regex::optional(
-                    Regex::union(vec![
-                        Regex::single_char('+'),
-                        Regex::single_char('-'),
-                    ]),
-                ),
+                Regex::optional(Regex::union(vec![
+                    Regex::single_char('+'),
+                    Regex::single_char('-'),
+                ])),
                 Regex::plus_from(Regex::character_range('0', '9')),
             ]),
         ),
@@ -53,10 +48,7 @@ fn lexeme_descriptors() -> Vec<LexemeDescriptor<TestLexemeType>> {
             TestLexemeType::WhiteSpace,
             Regex::plus_from(Regex::white_space()),
         ),
-        LexemeDescriptor::new(
-            TestLexemeType::SemiColon,
-            Regex::single_char(';'),
-        ),
+        LexemeDescriptor::new(TestLexemeType::SemiColon, Regex::single_char(';')),
     ]
 }
 
@@ -132,19 +124,20 @@ fn analyzed_program() -> Vec<Lexeme<TestLexemeType>> {
 #[test]
 fn test_lexical_analyzer_on_string() {
     let lexical_analyzer = LexicalAnalyzer::new(lexeme_descriptors());
-    let lexemes: Vec<Lexeme<TestLexemeType>> =
-        lexical_analyzer
-            .analyze(&mut ByteArrayReader::from_string(source_program_string().to_string()))
-            .collect();
+    let lexemes: Vec<Lexeme<TestLexemeType>> = lexical_analyzer
+        .analyze(&mut ByteArrayReader::from_string(
+            source_program_string().to_string(),
+        ))
+        .collect();
     assert_eq!(lexemes, analyzed_program())
 }
 
 #[test]
 #[should_panic]
 fn test_lexical_error() {
-    let lexical_analyzer = LexicalAnalyzer::new(vec![
-        LexemeDescriptor::new((), Regex::single_char('+'))
-    ]);
-    let _ = lexical_analyzer.analyze(&mut ByteArrayReader::from_string("++-+".to_string()))
+    let lexical_analyzer =
+        LexicalAnalyzer::new(vec![LexemeDescriptor::new((), Regex::single_char('+'))]);
+    let _ = lexical_analyzer
+        .analyze(&mut ByteArrayReader::from_string("++-+".to_string()))
         .collect::<Vec<Lexeme<()>>>();
 }

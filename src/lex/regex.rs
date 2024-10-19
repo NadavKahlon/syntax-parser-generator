@@ -41,9 +41,12 @@ impl Regex {
     /// If the character is not ASCII (cannot be represented by a single byte).
     pub fn single_char(value: char) -> Regex {
         Regex::SingleCharacter {
-            value: value.try_into().unwrap_or_else(|_| panic!(
-                "Cannot create a single-character regex from {:?}, as it's not 1-byte long", value
-            ))
+            value: value.try_into().unwrap_or_else(|_| {
+                panic!(
+                    "Cannot create a single-character regex from {:?}, as it's not 1-byte long",
+                    value
+                )
+            }),
         }
     }
 
@@ -59,16 +62,15 @@ impl Regex {
 
     /// Creates a pattern that matches zero or more repetitions of the specified pattern.
     pub fn star_from(repeated_pattern: Regex) -> Regex {
-        Regex::Star { repeated_pattern: Box::new(repeated_pattern) }
+        Regex::Star {
+            repeated_pattern: Box::new(repeated_pattern),
+        }
     }
 
     /// Creates a pattern that matches one or more repetitions of the specified pattern.
     pub fn plus_from(repeated_pattern: Regex) -> Regex {
         let star_pattern = Regex::star_from(repeated_pattern.clone());
-        Regex::concat(vec![
-            repeated_pattern,
-            star_pattern,
-        ])
+        Regex::concat(vec![repeated_pattern, star_pattern])
     }
 
     /// Creates a pattern that matches a single white-space character.
@@ -78,36 +80,24 @@ impl Regex {
             white_space_characters
                 .into_iter()
                 .map(Regex::single_char)
-                .collect()
+                .collect(),
         )
     }
 
     /// Creates a pattern that matches a hard-coded sequence of characters.
     pub fn constant_string(string: &str) -> Regex {
-        Regex::concat(
-            string
-                .chars()
-                .map(Regex::single_char)
-                .collect()
-        )
+        Regex::concat(string.chars().map(Regex::single_char).collect())
     }
 
     /// Creates a pattern that matches any single character between the specified couple of
     /// characters (inclusive).
     pub fn character_range(start: char, end: char) -> Regex {
-        Regex::union(
-            (start..=end)
-                .map(Regex::single_char)
-                .collect()
-        )
+        Regex::union((start..=end).map(Regex::single_char).collect())
     }
 
     /// Creates a pattern that matches the specified pattern, and an empty sequence of bytes.
     pub fn optional(option: Regex) -> Regex {
-        Regex::union(vec![
-            option,
-            Regex::epsilon(),
-        ])
+        Regex::union(vec![option, Regex::epsilon()])
     }
 
     /// Creates a pattern that only matches an empty sequence of characters.
@@ -116,7 +106,8 @@ impl Regex {
     }
 
     pub(crate) fn build_into_nfa<Label>(
-        &self, nfa: &mut Nfa<u8, Label>,
+        &self,
+        nfa: &mut Nfa<u8, Label>,
     ) -> (Handle<NfaState<u8, Label>>, Handle<NfaState<u8, Label>>)
     where
     {
@@ -131,8 +122,7 @@ impl Regex {
                 let start = nfa.new_state();
                 let end = nfa.new_state();
                 for option in options {
-                    let (option_start, option_end) =
-                        option.build_into_nfa(nfa);
+                    let (option_start, option_end) = option.build_into_nfa(nfa);
                     nfa.link(start, option_start, None);
                     nfa.link(option_end, end, None);
                 }
@@ -143,8 +133,7 @@ impl Regex {
                 let end = nfa.new_state();
                 let mut curr = start;
                 for part in parts {
-                    let (part_start, part_end) =
-                        part.build_into_nfa(nfa);
+                    let (part_start, part_end) = part.build_into_nfa(nfa);
                     nfa.link(curr, part_start, None);
                     curr = part_end;
                 }
@@ -181,24 +170,21 @@ mod tests {
         nfa.set_initial_state(start);
 
         let dfa = nfa
-            .compile_to_dfa(|labels| {
-                if labels.is_empty() {
-                    None
-                } else {
-                    Some(())
-                }
-            })
+            .compile_to_dfa(|labels| if labels.is_empty() { None } else { Some(()) })
             .minimize();
 
         return dfa;
     }
 
     fn is_string_in(dfa: &Dfa<u8, ()>, data: &str) -> bool {
-        match dfa.scan(String::from(data).into_bytes().into_iter().map(|x| x.handle())) {
+        match dfa.scan(
+            String::from(data)
+                .into_bytes()
+                .into_iter()
+                .map(|x| x.handle()),
+        ) {
             None => false,
-            Some(end_state) => {
-                !dfa.get_label(end_state).is_none()
-            }
+            Some(end_state) => !dfa.get_label(end_state).is_none(),
         }
     }
     #[test]
@@ -237,7 +223,6 @@ mod tests {
         ]);
         let dfa = create_dfa_for_regex(pattern);
 
-
         assert_eq!(is_string_in(&dfa, "abc"), true);
         assert_eq!(is_string_in(&dfa, ""), false);
         assert_eq!(is_string_in(&dfa, "a"), false);
@@ -247,9 +232,7 @@ mod tests {
     //noinspection ALL
     #[test]
     fn test_star() {
-        let pattern = Regex::star_from(
-            Regex::single_char('a'),
-        );
+        let pattern = Regex::star_from(Regex::single_char('a'));
         let dfa = create_dfa_for_regex(pattern);
 
         assert_eq!(is_string_in(&dfa, ""), true);
@@ -262,9 +245,7 @@ mod tests {
 
     #[test]
     fn test_plus() {
-        let pattern = Regex::plus_from(
-            Regex::single_char('a'),
-        );
+        let pattern = Regex::plus_from(Regex::single_char('a'));
         let dfa = create_dfa_for_regex(pattern);
 
         assert_eq!(is_string_in(&dfa, ""), false);
@@ -283,14 +264,12 @@ mod tests {
                 Regex::character_range('A', 'Z'),
                 Regex::single_char('_'),
             ]),
-            Regex::star_from(
-                Regex::union(vec![
-                    Regex::character_range('a', 'z'),
-                    Regex::character_range('A', 'Z'),
-                    Regex::character_range('0', '9'),
-                    Regex::single_char('_'),
-                ]),
-            ),
+            Regex::star_from(Regex::union(vec![
+                Regex::character_range('a', 'z'),
+                Regex::character_range('A', 'Z'),
+                Regex::character_range('0', '9'),
+                Regex::single_char('_'),
+            ])),
         ]);
         let dfa = create_dfa_for_regex(pattern);
 

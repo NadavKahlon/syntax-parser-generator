@@ -1,4 +1,5 @@
 use std::hash::{Hash, Hasher};
+
 use crate::handles::collections::handle_bit_set::HandleBitSet;
 use crate::handles::Handled;
 
@@ -12,7 +13,10 @@ where
         while let Some(&0) = bytes.last() {
             bytes.pop();
         }
-        Self { bytes, phantom_data: Default::default() }
+        Self {
+            bytes,
+            phantom_data: Default::default(),
+        }
     }
 }
 

@@ -1,5 +1,5 @@
-use crate::handles::collections::handle_bit_set::HandleBitSet;
 use crate::handles::{Handle, HandleCore, Handled};
+use crate::handles::collections::handle_bit_set::HandleBitSet;
 
 impl<T> IntoIterator for HandleBitSet<T>
 where
@@ -41,7 +41,9 @@ where
                 break None;
             }
 
-            let handle = Handle { core: T::HandleCoreType::from_index(self.curr_index) };
+            let handle = Handle {
+                core: T::HandleCoreType::from_index(self.curr_index),
+            };
             self.curr_index += 1;
 
             if self.set.contains(handle) {

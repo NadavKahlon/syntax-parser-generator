@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+
 use crate::handles::{Handle, Handled};
 use crate::handles::collections::{HandleBitSet, HandledVec, HandleMap};
 
@@ -34,7 +35,7 @@ pub struct Nfa<Symbol, Label>
 where
     Symbol: Handled,
 {
-    states: HandledVec<NfaState<Symbol, Label>>,    // TODO this does not utilize locality in space
+    states: HandledVec<NfaState<Symbol, Label>>, // TODO this does not utilize locality in space
     pub(super) initial_state: Option<Handle<NfaState<Symbol, Label>>>,
 }
 
@@ -58,7 +59,9 @@ where
     }
 
     pub fn link(
-        &mut self, src: Handle<NfaState<Symbol, Label>>, dst: Handle<NfaState<Symbol, Label>>,
+        &mut self,
+        src: Handle<NfaState<Symbol, Label>>,
+        dst: Handle<NfaState<Symbol, Label>>,
         transition_label: Option<Handle<Symbol>>,
     ) {
         match transition_label {
@@ -66,12 +69,14 @@ where
 
             Some(symbol) => {
                 if !self.states[src].symbol_transitions.contains_key(symbol) {
-                    self.states[src].symbol_transitions.insert(symbol, HashSet::new());
+                    self.states[src]
+                        .symbol_transitions
+                        .insert(symbol, HashSet::new());
                 }
-                let set =
-                    self.states[src].symbol_transitions.get_mut(symbol).expect(
-                        "Transition set for specified symbol should just have been added"
-                    );
+                let set = self.states[src]
+                    .symbol_transitions
+                    .get_mut(symbol)
+                    .expect("Transition set for specified symbol should just have been added");
                 set.insert(dst)
             }
         };
@@ -86,7 +91,8 @@ where
     }
 
     pub(super) fn epsilon_closure(
-        &self, states: &HandleBitSet<NfaState<Symbol, Label>>,
+        &self,
+        states: &HandleBitSet<NfaState<Symbol, Label>>,
     ) -> HandleBitSet<NfaState<Symbol, Label>> {
         let mut states_to_process: Vec<Handle<NfaState<Symbol, Label>>> =
             states.clone().iter().collect();
@@ -99,7 +105,7 @@ where
                         states_to_process.extend(&self.states[state].epsilon_transitions)
                     }
                 }
-                None => break
+                None => break,
             }
         }
 
@@ -107,14 +113,14 @@ where
     }
 
     pub(super) fn move_by_symbol(
-        &self, states: &HandleBitSet<NfaState<Symbol, Label>>, symbol: Handle<Symbol>,
+        &self,
+        states: &HandleBitSet<NfaState<Symbol, Label>>,
+        symbol: Handle<Symbol>,
     ) -> HandleBitSet<NfaState<Symbol, Label>> {
         let mut result = HandleBitSet::new();
 
         for state in states {
-            if let Some(destinations) =
-                self.states[state].symbol_transitions.get(symbol)
-            {
+            if let Some(destinations) = self.states[state].symbol_transitions.get(symbol) {
                 result.extend(destinations);
             }
         }
@@ -133,6 +139,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::handles::specials::AutomaticallyHandled;
+
     use super::*;
 
     #[derive(Clone, Copy)]
@@ -141,14 +148,14 @@ mod tests {
     }
     impl AutomaticallyHandled for Symbol {
         type HandleCoreType = u8;
-        fn serial(&self) -> usize { *self as usize }
+        fn serial(&self) -> usize {
+            *self as usize
+        }
     }
-
 
     fn build_test_data() -> (Nfa<Symbol, u32>, Vec<Handle<NfaState<Symbol, u32>>>) {
         let mut nfa = Nfa::new();
-        let states =
-            vec![nfa.new_state(), nfa.new_state(), nfa.new_state()];
+        let states = vec![nfa.new_state(), nfa.new_state(), nfa.new_state()];
 
         nfa.link(states[0], states[1], None);
         nfa.link(states[0], states[1], Some(Symbol::Symbol0.handle()));
