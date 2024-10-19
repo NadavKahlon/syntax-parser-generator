@@ -89,6 +89,7 @@ where
         }
     }
 
+    #[allow(dead_code)]  // It is used for internal unit-testing
     pub fn finalize(&mut self) -> bool {
         loop {
             match self.decide_internal(self.end_of_input_marker) {

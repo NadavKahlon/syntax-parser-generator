@@ -101,6 +101,7 @@ where
         self.states[src].transitions.get(symbol).copied()
     }
 
+    #[allow(dead_code)]  // It is used for internal unit-testing
     pub fn scan(
         &self, stream: impl Iterator<Item=Handle<Symbol>>,
     ) -> Option<Handle<DfaState<Symbol, Label>>> {
