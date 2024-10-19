@@ -8,6 +8,15 @@ use crate::parsing::lr_parser::LrParser;
 use crate::parsing::translator::build::Nonterminal;
 use crate::parsing::translator::handlers::{LeafSatelliteBuilder, SatelliteReducer};
 
+/// A syntax-directed translation engine based on a LALR parser.
+///
+/// Instances of this type are compiled parsers that's capable of consuming [Lexeme]s categorized
+/// by `LexemeType`, hold a translation context of type `Context`, and translate subtrees of the
+/// input syntax tree into instances of `Satellite`.
+///
+/// See [parsing](crate::parsing) and
+/// [SyntaxDirectedTranslatorBuilder](crate::parsing::SyntaxDirectedTranslatorBuilder) for more
+/// details on the parser and its specifications.
 pub struct SyntaxDirectedTranslator<LexemeType: Handled, Context, Satellite> {
     pub(super) lr_parser: LrParser<LexemeType, Nonterminal, SatelliteReducer<Context, Satellite>>,
     pub(super) default_leaf_satellite_builder: Option<LeafSatelliteBuilder<Context, Satellite>>,
@@ -19,6 +28,14 @@ impl<LexemeType: Debug, Context, Satellite> SyntaxDirectedTranslator<LexemeType,
 where
     LexemeType: AutomaticallyHandled,
 {
+    /// Parses a sequence of input lexemes.
+    ///
+    /// Operating on the given translation `context`, the parser consumes the `streams`'s lexemes,
+    /// reconstructs their syntax tree, and translates it into an intermediate representation
+    /// (of type `Satellite`) according to the user-defined translation scheme specified when the
+    /// parser was built.
+    ///
+    /// Returns the translated syntax tree, or [None] if a syntactic error was found.
     pub fn translate(&self, context: &mut Context, stream: impl Iterator<Item=Lexeme<LexemeType>>)
                      -> Option<Satellite>
     {

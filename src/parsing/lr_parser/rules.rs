@@ -48,9 +48,22 @@ impl<Terminal: Handled, Nonterminal: Handled> Handled for GrammarSymbol<Terminal
     type HandleCoreType = u16;
 }
 
+/// Represents the associativity of a binding of a grammar's terminals and production rules.
+///
+/// See [syntaxDirectedTranslatorBuilder](crate::parsing::SyntaxDirectedTranslatorBuilder) for more
+/// details.
 pub enum Associativity {
+    /// Represents left-associated binding.
+    ///
+    /// For example - the addition operator's binding is left-associated.
     Left,
+
+    /// Represents right-associated binding.
+    ///
+    /// For example - the unary minus operator's binding is right-associated.
     Right,
+
+    /// Represents bindings that cannot be associated to either left or right.
     None,
 }
 
